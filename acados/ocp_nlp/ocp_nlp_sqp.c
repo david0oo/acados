@@ -621,6 +621,9 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             {
                 // TODO:
                 // 1. adapt QP bounds to trust region
+                //  --- issue: not all primals are bounded (idxbx, idxbu)
+                //     -> either assume idxbx = 0, ..., nx-1, same for u
+                //     -> or: in create QP change the dimensions
                 // 2. solve QP -> if infeasiable error // exit, status ..
                 // 3. check filter/funnel
                 //  -- accept -> terminate + adjust TR

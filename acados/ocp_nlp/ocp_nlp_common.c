@@ -1871,7 +1871,6 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
     }
     else
     {
-
         // qp solver
         work->qp_work = (void *) c_ptr;
         c_ptr += qp_solver->workspace_calculate_size(qp_solver, dims->qp_solver,
@@ -1897,7 +1896,6 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
             work->constraints[i] = c_ptr;
             c_ptr += constraints[i]->workspace_calculate_size(constraints[i], dims->constraints[i], opts->constraints[i]);
         }
-
     }
 
     assert((char *) work + ocp_nlp_workspace_calculate_size(config, dims, opts) >= c_ptr);
@@ -2713,11 +2711,70 @@ double ocp_nlp_line_search(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_i
             }
         }
     }
+    else if (opts->globalization == FILTER_BACKTRACKING)
+    {
+        // while stepsize > minimal stepsize:
+        //      If trial iterate (xk + alpha*dk) acceptable to filter?
+        //      YES:
+        //              If Check switching condition pred >= sigma h(xk)^2
+        //              YES: (f-type step)
+        //                  If Armijo satisfied
+        //                      YES: Accept step
+        //                      NO: reduce step size continue
+        //              NO: (h-type step)
+        //                  Accept step and adjust filter
+        //      NO: reduce step size and continue
+
+        alpha = 1.0;
+        while (alpha > min_step)
+        {
+            filter_acceptable = is_filter_acceptable(xk, alpha, dk, filter)
+            if (filter_acceptable)
+            {
+                if (is_ftype_step(step)) // pred_objective_reduction >= sigma (current constraint violation)^2
+                {
+                    if (armijo_holds(step))
+                    {
+                        // accept
+                        // dont add in filter to allow nonmonotonicity
+                    }
+                    else
+                    {
+                        // reduce step size
+                        // continue
+                    }
+                }
+                else // h-type
+                {
+                    // accept and augment filter
+                }
+            }
+            else // not filter acceptable
+            {
+                // reduce step and continue
+            }
+        }
+    }
     if (opts->globalization != FIXED_STEP)
         printf("alpha %f\n", alpha);
 
     return alpha;
 }
+
+int armijo_holds(...)
+{
+    // TODO: see merit fun gradient
+    double cost_dir_derivative = compute_cost_directional_derivative();
+    double current_cost = ? // get from memory
+    double cost_step = evaluate_cost_at_trial();
+
+    if (cost_step < current_cost + c_1 * alpha * max(0, cost_dir_derivative))
+        return 1;
+    else
+        return 0;
+}
+
+
 
 
 void ocp_nlp_update_variables_sqp(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,

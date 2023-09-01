@@ -743,43 +743,6 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
                 int *ns = dims->ns;
                 // int *nv = dims->nv;
                 // int *ni = dims->ni;
-
-                /* evaluate constraints & dynamics at new step */
-                // The following (setting up ux + p in tmp_nlp_out and evaluation of constraints + dynamics)
-                // is not needed anymore because done in prelim. line search with early termination)
-                // NOTE: similar to ocp_nlp_evaluate_merit_fun
-                // set up new linearization point in work->tmp_nlp_out
-                // for (ii = 0; ii < N; ii++)
-                //     blasfeo_dveccp(nx[ii+1], nlp_out->pi+ii, 0, work->nlp_work->tmp_nlp_out->pi+ii, 0);
-
-                // for (ii = 0; ii <= N; ii++)
-                //     blasfeo_dveccp(2*ni[ii], nlp_out->lam+ii, 0, work->nlp_work->tmp_nlp_out->lam+ii, 0);
-
-                // // tmp_nlp_out = iterate + step
-                // for (ii = 0; ii <= N; ii++)
-                //     blasfeo_daxpy(nv[ii], 1.0, qp_out->ux+ii, 0, nlp_out->ux+ii, 0, work->nlp_work->tmp_nlp_out->ux+ii, 0);
-
-    //             // evaluate
-    // #if defined(ACADOS_WITH_OPENMP)
-    //     #pragma omp parallel for
-    // #endif
-    //             for (ii=0; ii<N; ii++)
-    //             {
-    //                 config->dynamics[ii]->compute_fun(config->dynamics[ii], dims->dynamics[ii], nlp_in->dynamics[ii],
-    //                                                 nlp_opts->dynamics[ii], nlp_mem->dynamics[ii], work->nlp_work->dynamics[ii]);
-    //             }
-    // #if defined(ACADOS_WITH_OPENMP)
-    //     #pragma omp parallel for
-    // #endif
-    //             for (ii=0; ii<=N; ii++)
-    //             {
-    //                 config->constraints[ii]->compute_fun(config->constraints[ii], dims->constraints[ii],
-    //                                                     nlp_in->constraints[ii], nlp_opts->constraints[ii],
-    //                                                     nlp_mem->constraints[ii], work->nlp_work->constraints[ii]);
-    //             }
-    // #if defined(ACADOS_WITH_OPENMP)
-    //     #pragma omp parallel for
-    // #endif
                 // update QP rhs
                 // d_i = c_i(x_k + p_k) - \nabla c_i(x_k)^T * p_k
                 struct blasfeo_dvec *tmp_fun_vec;

@@ -67,6 +67,9 @@ acados_size_t ocp_nlp_config_calculate_size(int N)
     // regularization
     size += ocp_nlp_reg_config_calculate_size();
 
+    // globalization
+    size += ocp_nlp_globalization_config_calculate_size();
+
 
     // dynamics
     size += N * sizeof(ocp_nlp_dynamics_config *);
@@ -104,6 +107,10 @@ ocp_nlp_config *ocp_nlp_config_assign(int N, void *raw_memory)
     // regularization
     config->regularize = ocp_nlp_reg_config_assign(c_ptr);
     c_ptr += ocp_nlp_reg_config_calculate_size();
+
+    // globalization
+    config->globalization = ocp_nlp_globalization_config_assign(c_ptr);
+    c_ptr += ocp_nlp_globalization_config_calculate_size();
 
     // dynamics
     config->dynamics = (ocp_nlp_dynamics_config **) c_ptr;
@@ -248,17 +255,6 @@ static ocp_nlp_dims *ocp_nlp_dims_assign_self(int N, void *raw_memory)
     // regularization
     dims->regularize = ocp_nlp_reg_dims_assign(N, c_ptr);
     c_ptr += ocp_nlp_reg_dims_calculate_size(N);
-
-    /* initialize qp_solver dimensions */
-//    dims->qp_solver->N = N;
-//    for (int i = 0; i <= N; i++)
-//    {
-        // TODO(dimitris): values below are needed for reformulation of QP when soft constraints
-        //   are not supported. Make this a bit more transparent as it clushes with nbx/nbu above.
-//        dims->qp_solver->nsbx[i] = 0;
-//        dims->qp_solver->nsbu[i] = 0;
-//        dims->qp_solver->nsg[i] = 0;
-//    }
 
     // N
     dims->N = N;
@@ -931,6 +927,8 @@ acados_size_t ocp_nlp_opts_calculate_size(void *config_, void *dims_)
 
     size += config->regularize->opts_calculate_size();
 
+    size += config->globalization->opts_calculate_size();
+
     // dynamics
     size += N * sizeof(void *);
     for (int i = 0; i < N; i++)
@@ -995,6 +993,9 @@ void *ocp_nlp_opts_assign(void *config_, void *dims_, void *raw_memory)
 
     opts->regularize = config->regularize->opts_assign(c_ptr);
     c_ptr += config->regularize->opts_calculate_size();
+
+    opts->globalization = config->globalization->opts_assign(c_ptr);
+    c_ptr += config->globalization->opts_calculate_size();
 
     // dynamics
     for (int i = 0; i < N; i++)
@@ -1064,6 +1065,9 @@ void ocp_nlp_opts_initialize_default(void *config_, void *dims_, void *opts_)
     // regularization
     regularize->opts_initialize_default(regularize, dims->regularize, opts->regularize);
 
+    // globalization
+    globalization->opts_initialize_default(globalization, dims->globalization, opts->globalization);
+
     // dynamics
     for (int i = 0; i < N; i++)
     {
@@ -1094,7 +1098,7 @@ void ocp_nlp_opts_initialize_default(void *config_, void *dims_, void *opts_)
 }
 
 
-
+// TODO(oj): not sure if we need this.
 void ocp_nlp_opts_update(void *config_, void *dims_, void *opts_)
 {
     ocp_nlp_dims *dims = dims_;
@@ -1171,6 +1175,13 @@ void ocp_nlp_opts_set(void *config_, void *opts_, const char *field, void* value
             int* num_threads = (int *) value;
             opts->num_threads = *num_threads;
         }
+        else if (!strcmp(field, "full_step_dual"))
+        {
+            int* full_step_dual = (int *) value;
+            opts->full_step_dual = *full_step_dual;
+        }
+        // TODO: the following should go into a glob module?!
+        // from here
         else if (!strcmp(field, "step_length"))
         {
             double* step_length = (double *) value;
@@ -1190,11 +1201,6 @@ void ocp_nlp_opts_set(void *config_, void *opts_, const char *field, void* value
         {
             double* eps_sufficient_descent = (double *) value;
             opts->eps_sufficient_descent = *eps_sufficient_descent;
-        }
-        else if (!strcmp(field, "full_step_dual"))
-        {
-            int* full_step_dual = (int *) value;
-            opts->full_step_dual = *full_step_dual;
         }
         else if (!strcmp(field, "line_search_use_sufficient_descent"))
         {
@@ -1224,6 +1230,7 @@ void ocp_nlp_opts_set(void *config_, void *opts_, const char *field, void* value
                 exit(1);
             }
         }
+        // to here glob opts
         else if (!strcmp(field, "levenberg_marquardt"))
         {
             double* levenberg_marquardt = (double *) value;
@@ -1371,6 +1378,9 @@ acados_size_t ocp_nlp_memory_calculate_size(ocp_nlp_config *config, ocp_nlp_dims
     // regularization
     size += config->regularize->memory_calculate_size(config->regularize, dims->regularize, opts->regularize);
 
+    // globalization
+    size += config->globalization->memory_calculate_size(config->globalization, dims->globalization, opts->globalization);
+
     // dynamics
     size += N * sizeof(void *);
     for (int i = 0; i < N; i++)
@@ -1488,6 +1498,13 @@ ocp_nlp_memory *ocp_nlp_memory_assign(ocp_nlp_config *config, ocp_nlp_dims *dims
                                                             opts->regularize, c_ptr);
     c_ptr += config->regularize->memory_calculate_size(config->regularize, dims->regularize,
                                                        opts->regularize);
+
+    // globalization
+    mem->globalization_mem = config->globalization->memory_assign(config->globalization, dims->globalization,
+                                                            opts->globalization, c_ptr);
+    c_ptr += config->globalization->memory_calculate_size(config->globalization, dims->globalization,
+                                                       opts->globalization);
+
 
     // dynamics
     for (int i = 0; i < N; i++)
@@ -1685,6 +1702,10 @@ acados_size_t ocp_nlp_workspace_calculate_size(ocp_nlp_config *config, ocp_nlp_d
         tmp = qp_solver->workspace_calculate_size(qp_solver, dims->qp_solver, opts->qp_solver_opts);
         size_tmp = tmp > size_tmp ? tmp : size_tmp;
 
+        // globalization
+        tmp = globalization->workspace_calculate_size(globalization, dims->globalization, opts->globalization_opts);
+        size_tmp = tmp > size_tmp ? tmp : size_tmp;
+
         // dynamics
         for (int i = 0; i < N; i++)
         {
@@ -1717,6 +1738,9 @@ acados_size_t ocp_nlp_workspace_calculate_size(ocp_nlp_config *config, ocp_nlp_d
         // qp solver
         size += qp_solver->workspace_calculate_size(qp_solver, dims->qp_solver,
             opts->qp_solver_opts);
+
+        size += globalization->workspace_calculate_size(globalization, dims->globalization, opts->globalization_opts);
+
 
         // dynamics
         for (int i = 0; i < N; i++)
@@ -1809,6 +1833,9 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
         work->qp_work = (void *) c_ptr;
         c_ptr += qp_solver->workspace_calculate_size(qp_solver, dims->qp_solver, opts->qp_solver_opts);
 
+        work->globalization = (void *) c_ptr;
+        c_ptr += globalization->workspace_calculate_size(globalization, dims->globalization, opts->globalization_opts);
+
         // dynamics
         for (int i = 0; i < N; i++)
         {
@@ -1839,6 +1866,12 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
         work->qp_work = (void *) c_ptr;
         tmp = qp_solver->workspace_calculate_size(qp_solver, dims->qp_solver, opts->qp_solver_opts);
         size_tmp = tmp > size_tmp ? tmp : size_tmp;
+
+        // globalization
+        work->globalization_work = (void *) c_ptr;
+        tmp = globalization->workspace_calculate_size(globalization, dims->globalization, opts->globalization_opts);
+        size_tmp = tmp > size_tmp ? tmp : size_tmp;
+
 
         // dynamics
         for (int i = 0; i < N; i++)
@@ -1875,6 +1908,9 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
         work->qp_work = (void *) c_ptr;
         c_ptr += qp_solver->workspace_calculate_size(qp_solver, dims->qp_solver,
             opts->qp_solver_opts);
+
+        work->globalization = (void *) c_ptr;
+        c_ptr += globalization->workspace_calculate_size(globalization, dims->globalization, opts->globalization_opts);
 
         // dynamics
         for (int i = 0; i < N; i++)
@@ -1988,6 +2024,8 @@ void ocp_nlp_alias_memory_to_submodules(ocp_nlp_config *config, ocp_nlp_dims *di
     config->regularize->memory_set_pi_ptr(dims->regularize, nlp_mem->qp_out->pi, nlp_mem->regularize_mem);
     config->regularize->memory_set_lam_ptr(dims->regularize, nlp_mem->qp_out->lam, nlp_mem->regularize_mem);
 
+    // alias TODO: globalization
+
     // copy sampling times into dynamics model
 #if defined(ACADOS_WITH_OPENMP)
     #pragma omp for nowait
@@ -2034,6 +2072,7 @@ void ocp_nlp_initialize_submodules(ocp_nlp_config *config, ocp_nlp_dims *dims, o
         config->constraints[i]->initialize(config->constraints[i], dims->constraints[i],
                 in->constraints[i], opts->constraints[i], mem->constraints[i], work->constraints[i]);
     }
+    // TODO: needed for glob?
 
     return;
 }
@@ -2428,6 +2467,8 @@ static double ocp_nlp_get_violation(ocp_nlp_config *config, ocp_nlp_dims *dims,
 }
 
 
+
+// TODO: MOVE to globa?
 
 double ocp_nlp_evaluate_merit_fun(ocp_nlp_config *config, ocp_nlp_dims *dims,
                                   ocp_nlp_in *in, ocp_nlp_out *out, ocp_nlp_opts *opts,

@@ -88,7 +88,11 @@ void ocp_nlp_reg_cost_lm_opts_set(void *config_, void *opts_, const char *field,
 
 acados_size_t ocp_nlp_reg_cost_lm_memory_calculate_size(void *config_, ocp_nlp_reg_dims *dims, void *opts_)
 {
+    int N = dims->N;
     acados_size_t size = 0;
+
+    size += sizeof(ocp_nlp_reg_cost_lm_memory);
+    size += (N+1)*sizeof(struct blasfeo_dmat *); // RSQrq
 
     return size;
 }
@@ -97,14 +101,38 @@ acados_size_t ocp_nlp_reg_cost_lm_memory_calculate_size(void *config_, ocp_nlp_r
 
 void *ocp_nlp_reg_cost_lm_memory_assign(void *config_, ocp_nlp_reg_dims *dims, void *opts_, void *raw_memory)
 {
-    return raw_memory;
+    char *c_ptr = (char *) raw_memory;
+
+    int N = dims->N;
+
+    ocp_nlp_reg_cost_lm_memory *mem = (ocp_nlp_reg_cost_lm_memory *) c_ptr;
+    c_ptr += sizeof(ocp_nlp_reg_cost_lm_memory);
+
+    mem->RSQrq = (struct blasfeo_dmat **) c_ptr;
+    c_ptr += (N+1)*sizeof(struct blasfeo_dmat *); // RSQrq
+
+    assert((char *) mem + ocp_nlp_reg_cost_lm_memory_calculate_size(config_, dims, opts_) >= c_ptr);
+
+    return mem;
 }
 
 
 
 void ocp_nlp_reg_cost_lm_memory_set_RSQrq_ptr(ocp_nlp_reg_dims *dims, struct blasfeo_dmat *RSQrq, void *memory_)
 {
-    return;
+    ocp_nlp_reg_cost_lm_memory *memory = memory_;
+
+    int ii;
+
+    int N = dims->N;
+    // int *nx = dims->nx;
+    // int *nu = dims->nu;
+
+    for(ii=0; ii<=N; ii++)
+    {
+        memory->RSQrq[ii] = RSQrq+ii;
+        // blasfeo_print_dmat(nu[ii]+nx[ii]+1, nu[ii]+nx[ii], memory->RSQrq[ii], 0, 0);
+    }
 }
 
 
@@ -168,8 +196,16 @@ void ocp_nlp_reg_cost_lm_memory_set_lam_ptr(ocp_nlp_reg_dims *dims, struct blasf
 void ocp_nlp_reg_cost_lm_memory_set(void *config_, ocp_nlp_reg_dims *dims, void *memory_, char *field, void *value)
 {
 
-    printf("\nerror: field %s not available in ocp_nlp_reg_cost_lm_set\n", field);
-    exit(1);
+    if(!strcmp(field, "RSQrq_ptr"))
+    {
+        struct blasfeo_dmat *RSQrq = value;
+        ocp_nlp_reg_cost_lm_memory_set_RSQrq_ptr(dims, RSQrq, memory_);
+    }
+    else
+    {
+        printf("\nerror: field %s not available in ocp_nlp_reg_cost_lm_set\n", field);
+        exit(1);
+    }
 
     return;
 }
@@ -182,6 +218,21 @@ void ocp_nlp_reg_cost_lm_memory_set(void *config_, ocp_nlp_reg_dims *dims, void 
 
 void ocp_nlp_reg_cost_lm_regularize(void *config, ocp_nlp_reg_dims *dims, void *opts_, void *mem_)
 {
+    int N = dims->N;
+    int *nx = dims->nx;
+    int *nu = dims->nu;
+    ocp_nlp_reg_cost_lm_memory *mem = (ocp_nlp_reg_cost_lm_memory *) mem_;
+
+    double gamma = 1e-4;
+    for (int ii=0; ii<=N; ii++)
+    {
+        blasfeo_ddiare(nu[ii] + nx[ii], gamma,
+                               mem->RSQrq[ii], 0, 0);
+
+        printf("cost_lm_reg: RSQ at %d\n", ii);
+        blasfeo_print_dmat(nu[ii]+nx[ii]+1, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
+    }
+
     return;
 }
 

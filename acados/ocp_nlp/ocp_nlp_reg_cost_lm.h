@@ -76,6 +76,11 @@ void ocp_nlp_reg_cost_lm_opts_set(void *config_, void *opts_, const char *field,
 /************************************************
  * memory
  ************************************************/
+typedef struct
+{
+    struct blasfeo_dmat **RSQrq;  // pointer to RSQrq in qp_in
+} ocp_nlp_reg_cost_lm_memory;
+
 //
 acados_size_t ocp_nlp_reg_cost_lm_memory_calculate_size(void *config, ocp_nlp_reg_dims *dims, void *opts);
 //

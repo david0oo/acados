@@ -79,6 +79,7 @@ void ocp_nlp_reg_cost_lm_opts_set(void *config_, void *opts_, const char *field,
 typedef struct
 {
     struct blasfeo_dmat **RSQrq;  // pointer to RSQrq in qp_in
+    double *cost_value; // const function value
 } ocp_nlp_reg_cost_lm_memory;
 
 //

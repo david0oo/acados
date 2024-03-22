@@ -2041,6 +2041,7 @@ void ocp_nlp_alias_memory_to_submodules(ocp_nlp_config *config, ocp_nlp_dims *di
     config->regularize->memory_set_ux_ptr(dims->regularize, nlp_mem->qp_out->ux, nlp_mem->regularize_mem);
     config->regularize->memory_set_pi_ptr(dims->regularize, nlp_mem->qp_out->pi, nlp_mem->regularize_mem);
     config->regularize->memory_set_lam_ptr(dims->regularize, nlp_mem->qp_out->lam, nlp_mem->regularize_mem);
+    config->regularize->memory_set_cost_ptr(dims->regularize, &nlp_mem->cost_value, nlp_mem->regularize_mem);
 
     // copy sampling times into dynamics model
 #if defined(ACADOS_WITH_OPENMP)
@@ -3180,5 +3181,5 @@ void ocp_nlp_cost_compute(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in
     }
     mem->cost_value = total_cost;
 
-    // printf("\ncomputed total cost: %e\n", total_cost);
+    printf("\ncomputed total cost: %e\n", total_cost);
 }

@@ -669,6 +669,7 @@ void ocp_nlp_reg_convexify_regularize(void *config, ocp_nlp_reg_dims *dims, void
             // TODO maybe 'b' is a bad naming...
 //            BLASFEO_DMATEL(mem->RSQrq[ii], nu[ii]+nx[ii], jj) = BLASFEO_DMATEL(mem->RSQrq[ii], nu[ii]+nx[ii], jj) + BLASFEO_DVECEL(&mem->b2, jj);
 
+        // Q_bar -= RSQrq[nu:, nu:]
         blasfeo_dgead(nx[ii], nx[ii], -1.0, mem->RSQrq[ii], nu[ii], nu[ii], &mem->Q_bar, 0, 0);
 
         // make symmetric

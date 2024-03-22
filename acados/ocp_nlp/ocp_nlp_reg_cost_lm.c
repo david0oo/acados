@@ -192,6 +192,13 @@ void ocp_nlp_reg_cost_lm_memory_set_lam_ptr(ocp_nlp_reg_dims *dims, struct blasf
 }
 
 
+void ocp_nlp_reg_cost_lm_memory_set_cost_ptr(ocp_nlp_reg_dims *dims, double *cost_value, void *memory_)
+{
+    ocp_nlp_reg_cost_lm_memory *memory = memory_;
+    memory->cost_value = cost_value;
+    return;
+}
+
 
 void ocp_nlp_reg_cost_lm_memory_set(void *config_, ocp_nlp_reg_dims *dims, void *memory_, char *field, void *value)
 {
@@ -223,14 +230,16 @@ void ocp_nlp_reg_cost_lm_regularize(void *config, ocp_nlp_reg_dims *dims, void *
     int *nu = dims->nu;
     ocp_nlp_reg_cost_lm_memory *mem = (ocp_nlp_reg_cost_lm_memory *) mem_;
 
-    double gamma = 1e-4;
+    double gamma = *mem->cost_value;
+
+    printf("ocp_nlp_reg_cost_lm_regularize: got cost function value %e", *mem->cost_value);
     for (int ii=0; ii<=N; ii++)
     {
         blasfeo_ddiare(nu[ii] + nx[ii], gamma,
                                mem->RSQrq[ii], 0, 0);
 
-        printf("cost_lm_reg: RSQ at %d\n", ii);
-        blasfeo_print_dmat(nu[ii]+nx[ii]+1, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
+        // printf("cost_lm_reg: RSQ at %d\n", ii);
+        // blasfeo_print_dmat(nu[ii]+nx[ii]+1, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
     }
 
     return;
@@ -279,6 +288,7 @@ void ocp_nlp_reg_cost_lm_config_initialize_default(ocp_nlp_reg_config *config)
     config->memory_set_ux_ptr = &ocp_nlp_reg_cost_lm_memory_set_ux_ptr;
     config->memory_set_pi_ptr = &ocp_nlp_reg_cost_lm_memory_set_pi_ptr;
     config->memory_set_lam_ptr = &ocp_nlp_reg_cost_lm_memory_set_lam_ptr;
+    config->memory_set_cost_ptr = &ocp_nlp_reg_cost_lm_memory_set_cost_ptr;
     // functions
     config->regularize = &ocp_nlp_reg_cost_lm_regularize;
     config->regularize_lhs = &ocp_nlp_reg_cost_lm_regularize_lhs;

@@ -94,6 +94,7 @@ typedef struct
     void (*memory_set_ux_ptr)(ocp_nlp_reg_dims *dims, struct blasfeo_dvec *vec, void *memory);
     void (*memory_set_pi_ptr)(ocp_nlp_reg_dims *dims, struct blasfeo_dvec *vec, void *memory);
     void (*memory_set_lam_ptr)(ocp_nlp_reg_dims *dims, struct blasfeo_dvec *vec, void *memory);
+    void (*memory_set_cost_ptr)(ocp_nlp_reg_dims *dims, double *val, void *memory);
     /* functions */
     void (*regularize)(void *config, ocp_nlp_reg_dims *dims, void *opts, void *memory);
     void (*regularize_lhs)(void *config, ocp_nlp_reg_dims *dims, void *opts, void *memory);

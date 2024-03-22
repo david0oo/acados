@@ -90,6 +90,7 @@ typedef enum
     PROJECT,
     PROJECT_REDUC_HESS,
     CONVEXIFY,
+    COST_LM,
     INVALID_REGULARIZE,
 } ocp_nlp_reg_t;
 

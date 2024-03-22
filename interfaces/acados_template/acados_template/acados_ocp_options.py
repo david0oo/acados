@@ -247,7 +247,7 @@ class AcadosOcpOptions:
     @property
     def regularize_method(self):
         """Regularization method for the Hessian.
-        String in ('NO_REGULARIZE', 'MIRROR', 'PROJECT', 'PROJECT_REDUC_HESS', 'CONVEXIFY') or :code:`None`.
+        String in ('NO_REGULARIZE', 'MIRROR', 'PROJECT', 'PROJECT_REDUC_HESS', 'CONVEXIFY', 'COST_LM') or :code:`None`.
 
         - MIRROR: performs eigenvalue decomposition H = V^T D V and sets D_ii = max(eps, abs(D_ii))
         - PROJECT: performs eigenvalue decomposition H = V^T D V and sets D_ii = max(eps, D_ii)
@@ -680,7 +680,7 @@ class AcadosOcpOptions:
     @regularize_method.setter
     def regularize_method(self, regularize_method):
         regularize_methods = ('NO_REGULARIZE', 'MIRROR', 'PROJECT', \
-                                'PROJECT_REDUC_HESS', 'CONVEXIFY')
+                                'PROJECT_REDUC_HESS', 'CONVEXIFY', 'COST_LM')
         if regularize_method in regularize_methods:
             self.__regularize_method = regularize_method
         else:

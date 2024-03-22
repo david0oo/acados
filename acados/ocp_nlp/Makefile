@@ -49,6 +49,7 @@ OBJS += ocp_nlp_sqp.o
 OBJS += ocp_nlp_sqp_rti.o
 OBJS += ocp_nlp_reg_common.o
 OBJS += ocp_nlp_reg_convexify.o
+OBJS += ocp_nlp_reg_cost_lm.o
 OBJS += ocp_nlp_reg_mirror.o
 OBJS += ocp_nlp_reg_project.o
 OBJS += ocp_nlp_reg_project_reduc_hess.o

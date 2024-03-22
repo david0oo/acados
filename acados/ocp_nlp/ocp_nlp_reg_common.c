@@ -181,7 +181,7 @@ void acados_reconstruct_A(int dim, double *A, double *V, double *d)
 
 
 // mirroring regularization
-void acados_mirror(int dim, double *A, double *V, double *d, double *e, double epsilon)
+void ocp_nlp_reg_common_mirror(int dim, double *A, double *V, double *d, double *e, double epsilon)
 {
     int i;
 
@@ -203,7 +203,7 @@ void acados_mirror(int dim, double *A, double *V, double *d, double *e, double e
 
 
 // projecting regularization
-void acados_project(int dim, double *A, double *V, double *d, double *e, double epsilon)
+void ocp_nlp_reg_common_project(int dim, double *A, double *V, double *d, double *e, double epsilon)
 {
     int i;
 

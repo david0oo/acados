@@ -285,7 +285,7 @@ void ocp_nlp_reg_mirror_regularize(void *config, ocp_nlp_reg_dims *dims, void *o
 
         // regularize
         blasfeo_unpack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, mem->reg_hess, nu[ii]+nx[ii]);
-        acados_mirror(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, opts->epsilon);
+        ocp_nlp_reg_common_mirror(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, opts->epsilon);
         blasfeo_pack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->reg_hess, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
     }
 }

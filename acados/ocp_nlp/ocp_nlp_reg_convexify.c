@@ -622,9 +622,9 @@ void ocp_nlp_reg_convexify_regularize(void *config, ocp_nlp_reg_dims *dims, void
             blasfeo_dgecp(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, &mem->tmp_RSQ, 0, 0);
             // TODO project only nu instead ???????????
             // TODO compute correction as a separate matrix, and apply to original_RSQrq too (TODO change this name then)
-//            acados_mirror(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
+//            ocp_nlp_reg_common_mirror(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
             blasfeo_unpack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, mem->reg_hess, nu[ii]+nx[ii]);
-            acados_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
+            ocp_nlp_reg_common_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
             blasfeo_pack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->reg_hess, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
 
             blasfeo_dgead(nu[ii]+nx[ii], nu[ii]+nx[ii], -1.0, mem->RSQrq[ii], 0, 0, &mem->tmp_RSQ, 0, 0);
@@ -734,7 +734,7 @@ void ocp_nlp_reg_convexify_regularize_lhs(void *config, ocp_nlp_reg_dims *dims, 
             blasfeo_dgecp(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, &mem->tmp_RSQ, 0, 0);
 
             blasfeo_unpack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, mem->reg_hess, nu[ii]+nx[ii]);
-            acados_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
+            ocp_nlp_reg_common_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
             blasfeo_pack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->reg_hess, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
 
             blasfeo_dgead(nu[ii]+nx[ii], nu[ii]+nx[ii], -1.0, mem->RSQrq[ii], 0, 0, &mem->tmp_RSQ, 0, 0);
@@ -825,7 +825,7 @@ void ocp_nlp_reg_convexify_regularize_rhs(void *config, ocp_nlp_reg_dims *dims, 
             blasfeo_dgecp(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, &mem->tmp_RSQ, 0, 0);
 
             blasfeo_unpack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, mem->reg_hess, nu[ii]+nx[ii]);
-            acados_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
+            ocp_nlp_reg_common_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, 1e-4);
             blasfeo_pack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->reg_hess, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
 
             blasfeo_dgead(nu[ii]+nx[ii], nu[ii]+nx[ii], -1.0, mem->RSQrq[ii], 0, 0, &mem->tmp_RSQ, 0, 0);

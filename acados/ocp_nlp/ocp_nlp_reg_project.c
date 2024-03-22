@@ -284,7 +284,7 @@ void ocp_nlp_reg_project_regularize(void *config, ocp_nlp_reg_dims *dims, void *
 
         // regularize
         blasfeo_unpack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0, mem->reg_hess, nu[ii]+nx[ii]);
-        acados_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, opts->epsilon);
+        ocp_nlp_reg_common_project(nu[ii]+nx[ii], mem->reg_hess, mem->V, mem->d, mem->e, opts->epsilon);
         blasfeo_pack_dmat(nu[ii]+nx[ii], nu[ii]+nx[ii], mem->reg_hess, nu[ii]+nx[ii], mem->RSQrq[ii], 0, 0);
     }
 }

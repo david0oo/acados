@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.;
 #
 
-from acados_template import AcadosOcp, AcadosOcpSolver, AcadosModel
+from acados_template import AcadosOcp, AcadosOcpSolver, AcadosModel, ACADOS_INFTY
 import numpy as np
 import scipy.linalg
 from linear_mass_model import *
@@ -39,7 +39,7 @@ OBSTACLE = True
 SOFTEN_OBSTACLE = False
 SOFTEN_TERMINAL = True
 INITIALIZE = True
-PLOT = False
+PLOT = True
 OBSTACLE_POWER = 2
 
 # an OCP to test Maratos effect an second order correction
@@ -48,9 +48,9 @@ def main():
     # run test cases
 
     # all setting
-    params = {'globalization': ['FIXED_STEP', 'MERIT_BACKTRACKING'], # MERIT_BACKTRACKING, FIXED_STEP
+    params = {'globalization': ['FIXED_STEP', 'MERIT_BACKTRACKING', 'FUNNEL_L1PEN_LINESEARCH'], # MERIT_BACKTRACKING, FIXED_STEP
               'line_search_use_sufficient_descent' : [0, 1],
-              'qp_solver' : ['FULL_CONDENSING_HPIPM', 'PARTIAL_CONDENSING_HPIPM', 'FULL_CONDENSING_QPOASES'],
+              'qp_solver' : ['FULL_CONDENSING_HPIPM', 'PARTIAL_CONDENSING_HPIPM'],#, 'FULL_CONDENSING_QPOASES'],
               'globalization_use_SOC' : [0, 1] }
 
     keys, values = zip(*params.items())
@@ -58,6 +58,10 @@ def main():
         setting = dict(zip(keys, combination))
         if setting['globalization'] == 'FIXED_STEP' and \
           (setting['globalization_use_SOC'] or setting['line_search_use_sufficient_descent']):
+            # skip some equivalent settings
+            pass
+        elif setting['globalization'] == 'FUNNEL_L1PEN_LINESEARCH' and \
+          (setting['globalization_use_SOC'] == 1 or setting['line_search_use_sufficient_descent'] == 1):
             # skip some equivalent settings
             pass
         else:
@@ -127,9 +131,10 @@ def solve_maratos_ocp(setting):
 
     # add obstacle
     if OBSTACLE:
-        obs_rad = 1.0; obs_x = 0.0; obs_y = 0.0;
+        obs_rad = 1.0; obs_x = 0.0; obs_y = 0.0
         circle = (obs_x, obs_y, obs_rad)
-        ocp.constraints.uh = np.array([100.0]) # doenst matter
+        ocp.constraints.uh = np.array([ACADOS_INFTY]) # doenst matter
+        # ocp.constraints.uh = np.array([100.0]) # doenst matter
         ocp.constraints.lh = np.array([obs_rad**2])
         x_square = model.x[0] ** OBSTACLE_POWER + model.x[1] ** OBSTACLE_POWER
         ocp.model.con_h_expr = x_square
@@ -165,7 +170,7 @@ def solve_maratos_ocp(setting):
     ocp.solver_options.nlp_solver_type = 'SQP' # SQP_RTI, SQP
     ocp.solver_options.globalization = globalization
     ocp.solver_options.alpha_min = 0.01
-    # ocp.solver_options.levenberg_marquardt = 1e-2
+    ocp.solver_options.levenberg_marquardt = 1e-3
     ocp.solver_options.qp_solver_cond_N = 0
     ocp.solver_options.print_level = 1
     ocp.solver_options.nlp_solver_max_iter = 200
@@ -177,6 +182,7 @@ def solve_maratos_ocp(setting):
     ocp.solver_options.qp_solver_tol_ineq = qp_tol
     ocp.solver_options.qp_solver_tol_comp = qp_tol
     ocp.solver_options.qp_solver_ric_alg = 1
+    ocp.solver_options.qp_solver_mu0 = 1e3
     # ocp.solver_options.qp_solver_cond_ric_alg = 1
 
     # set prediction horizon

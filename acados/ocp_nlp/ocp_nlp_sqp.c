@@ -1041,6 +1041,15 @@ void ocp_nlp_sqp_config_initialize_default(void *config_)
 }
 
 
+
+void ocp_nlp_sqp_config_initialize_default_feasible_qp(void *config_)
+{
+    ocp_nlp_config *config = (ocp_nlp_config *) config_;
+    ocp_nlp_sqp_config_initialize_default(config_);
+    config->with_feasible_qp = 1;
+}
+
+
 // ??? @rien
 //        for (int_t i = 0; i < N; i++)
 //        {

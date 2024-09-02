@@ -192,6 +192,9 @@ ocp_nlp_config *ocp_nlp_config_create(ocp_nlp_plan_t plan)
         case SQP:
             ocp_nlp_sqp_config_initialize_default(config);
             break;
+        case SQP_WITH_FEASIBLE_QP:
+            ocp_nlp_sqp_config_initialize_default_feasible_qp(config);
+            break;
         case SQP_RTI:
             ocp_nlp_sqp_rti_config_initialize_default(config);
             break;

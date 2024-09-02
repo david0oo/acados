@@ -380,6 +380,7 @@ typedef struct ocp_nlp_memory
     // qp in & out
     ocp_qp_in *qp_in;
     ocp_qp_out *qp_out;
+
     // QP stuff not entering the qp_in struct
     struct blasfeo_dmat *dzduxt; // dzdux transposed
     struct blasfeo_dvec *z_alg; // z_alg, output algebraic variables

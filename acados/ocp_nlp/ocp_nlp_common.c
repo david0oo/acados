@@ -3151,6 +3151,49 @@ void ocp_nlp_common_eval_lagr_grad_p(ocp_nlp_config *config, ocp_nlp_dims *dims,
 }
 
 
+int ocp_nlp_solve_qp_and_correct_dual(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_opts *nlp_opts,
+                     ocp_nlp_memory *nlp_mem, ocp_nlp_workspace *nlp_work, bool precondensed_lhs)
+{
+    acados_timer timer;
+    ocp_qp_xcond_solver_config *qp_solver = config->qp_solver;
+
+    ocp_qp_in *qp_in = nlp_mem->qp_in;
+    ocp_qp_out *qp_out = nlp_mem->qp_out;
+    ocp_nlp_timings *nlp_timings = nlp_mem->nlp_timings;
+
+    double tmp_time;
+    int qp_status;
+
+    // solve qp
+    acados_tic(&timer);
+    if (precondensed_lhs)
+    {
+        qp_status = qp_solver->condense_rhs_and_solve(qp_solver, dims->qp_solver,
+            nlp_mem->qp_in, nlp_mem->qp_out, nlp_opts->qp_solver_opts,
+            nlp_mem->qp_solver_mem, nlp_work->qp_work);
+    }
+    else
+    {
+        qp_status = qp_solver->evaluate(qp_solver, dims->qp_solver, qp_in, qp_out,
+                                    nlp_opts->qp_solver_opts, nlp_mem->qp_solver_mem, nlp_work->qp_work);
+    }
+    // add qp timings
+    nlp_timings->time_qp_sol += acados_toc(&timer);
+    // NOTE: timings within qp solver are added internally (lhs+rhs)
+    qp_solver->memory_get(qp_solver, nlp_mem->qp_solver_mem, "time_qp_solver_call", &tmp_time);
+    nlp_timings->time_qp_solver_call += tmp_time;
+    qp_solver->memory_get(qp_solver, nlp_mem->qp_solver_mem, "time_qp_xcond", &tmp_time);
+    nlp_timings->time_qp_xcond += tmp_time;
+
+    // compute correct dual solution in case of Hessian regularization
+    acados_tic(&timer);
+    config->regularize->correct_dual_sol(config->regularize, dims->regularize,
+                                            nlp_opts->regularize, nlp_mem->regularize_mem);
+    nlp_timings->time_reg += acados_toc(&timer);
+
+    return qp_status;
+}
+
 
 void ocp_nlp_dump_qp_in_to_file(ocp_qp_in *qp_in, int sqp_iter, int soc)
 {
@@ -3246,6 +3289,91 @@ void ocp_nlp_timings_get(ocp_nlp_config *config, ocp_nlp_timings *timings, const
         exit(1);
     }
 }
+
+void ocp_nlp_memory_get(ocp_nlp_config *config, ocp_nlp_memory *nlp_mem, const char *field, void *return_value_)
+{
+    if (!strcmp("sqp_iter", field) || !strcmp("nlp_iter", field) || !strcmp("ddp_iter", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->iter;
+    }
+    else if (!strcmp("status", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->status;
+    }
+    else if (!strcmp("nlp_mem", field))
+    {
+        void **value = return_value_;
+        *value = nlp_mem;
+    }
+    else if (!strcmp("nlp_res", field))
+    {
+        ocp_nlp_res **value = return_value_;
+        *value = nlp_mem->nlp_res;
+    }
+    else if (!strcmp("qp_xcond_in", field))
+    {
+        void **value = return_value_;
+        *value = nlp_mem->qp_solver_mem->xcond_qp_in;
+    }
+    else if (!strcmp("qp_xcond_out", field))
+    {
+        void **value = return_value_;
+        *value = nlp_mem->qp_solver_mem->xcond_qp_out;
+    }
+    else if (!strcmp("qp_in", field))
+    {
+        void **value = return_value_;
+        *value = nlp_mem->qp_in;
+    }
+    else if (!strcmp("qp_out", field))
+    {
+        void **value = return_value_;
+        *value = nlp_mem->qp_out;
+    }
+    else if (!strcmp("qp_iter", field))
+    {
+        config->qp_solver->memory_get(config->qp_solver,
+            nlp_mem->qp_solver_mem, "iter", return_value_);
+    }
+    else if (!strcmp("qp_status", field))
+    {
+        config->qp_solver->memory_get(config->qp_solver,
+            nlp_mem->qp_solver_mem, "status", return_value_);
+    }
+    else if (!strcmp("res_stat", field))
+    {
+        double *value = return_value_;
+        *value = nlp_mem->nlp_res->inf_norm_res_stat;
+    }
+    else if (!strcmp("res_eq", field))
+    {
+        double *value = return_value_;
+        *value = nlp_mem->nlp_res->inf_norm_res_eq;
+    }
+    else if (!strcmp("res_ineq", field))
+    {
+        double *value = return_value_;
+        *value = nlp_mem->nlp_res->inf_norm_res_ineq;
+    }
+    else if (!strcmp("res_comp", field))
+    {
+        double *value = return_value_;
+        *value = nlp_mem->nlp_res->inf_norm_res_comp;
+    }
+    else if (!strcmp("cost_value", field))
+    {
+        double *value = return_value_;
+        *value = nlp_mem->cost_value;
+    }
+    else
+    {
+        printf("\nerror: field %s not available in ocp_nlp_memory_get\n", field);
+        exit(1);
+    }
+}
+
 
 void ocp_nlp_timings_reset(ocp_nlp_timings *timings)
 {

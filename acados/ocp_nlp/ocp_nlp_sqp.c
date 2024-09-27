@@ -532,22 +532,6 @@ static bool check_termination(int n_iter, ocp_nlp_dims *dims, ocp_nlp_res *nlp_r
 /************************************************
  * functions
  ************************************************/
-static void ocp_nlp_sqp_set_qp_slack_penalties(ocp_nlp_config *config, ocp_nlp_dims *dims,
-    ocp_nlp_in *in, ocp_nlp_out *out, ocp_nlp_opts *opts, ocp_nlp_memory *mem,
-    ocp_nlp_workspace *work)
-{
-    int N = dims->N;
-    int *nv = dims->nv;
-    int *nx = dims->nx;
-    int *nu = dims->nu;
-
-    // TODO:
-    // - loop over originally not softened constraints
-    // - set Z (L2) penalties to 0.0 (once at start)
-    // - set z (l1) according to penalty parameter.
-
-}
-
 
 // MAIN OPTIMIZATION ROUTINE
 int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
@@ -608,8 +592,6 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             // linearize NLP and update QP matrices
             acados_tic(&timer1);
             ocp_nlp_approximate_qp_matrices(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
-
-            ocp_nlp_sqp_set_qp_slack_penalties(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
             if (nlp_opts->with_adaptive_levenberg_marquardt || config->globalization->needs_objective_value() == 1)
             {
                 ocp_nlp_get_cost_value_from_submodules(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
@@ -1057,6 +1039,7 @@ void ocp_nlp_sqp_config_initialize_default(void *config_)
 
     return;
 }
+
 
 // ??? @rien
 //        for (int_t i = 0; i < N; i++)

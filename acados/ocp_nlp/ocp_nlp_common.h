@@ -74,6 +74,7 @@ extern "C" {
 typedef struct ocp_nlp_config
 {
     int N;  // number of stages
+    int with_feasible_qp;
 
     // solver-specific implementations of memory management functions
     acados_size_t (*opts_calculate_size)(void *config, void *dims);

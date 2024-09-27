@@ -634,7 +634,6 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             acados_tic(&timer1);
             ocp_nlp_approximate_qp_matrices(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
 
-            ocp_nlp_sqp_set_qp_slack_penalties(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
             if (nlp_opts->with_adaptive_levenberg_marquardt || config->globalization->needs_objective_value() == 1)
             {
                 ocp_nlp_get_cost_value_from_submodules(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
@@ -645,6 +644,8 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             ocp_nlp_approximate_qp_vectors_sqp(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
             nlp_timings->time_lin += acados_toc(&timer1);
 
+            // Set the penalties in slacked problem
+            ocp_nlp_sqp_wfqp_set_qp_slack_penalties(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
             // compute nlp residuals
             ocp_nlp_res_compute(dims, nlp_in, nlp_out, nlp_res, nlp_mem);
             ocp_nlp_res_get_inf_norm(nlp_res, &nlp_out->inf_norm_res);

@@ -97,6 +97,9 @@ typedef struct
     double alpha;
     double *primal_step_norm;
 
+    // indices of non-slacked constraints in NLP
+    int **idxns;
+
     // statistics
     double *stat;
     int stat_m;
@@ -122,7 +125,7 @@ void ocp_nlp_sqp_wfqp_memory_reset_qp_solver(void *config_, void *dims_, void *n
 typedef struct
 {
     ocp_nlp_workspace *nlp_work;
-} ocp_nlp_sqp_workspace;
+} ocp_nlp_sqp_wfqp_workspace;
 
 //
 acados_size_t ocp_nlp_sqp_wfqp_workspace_calculate_size(void *config, void *dims, void *opts_);

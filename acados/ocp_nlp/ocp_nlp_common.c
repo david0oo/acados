@@ -205,8 +205,11 @@ acados_size_t ocp_nlp_dims_calculate_size(void *config_)
     for (int i = 0; i <= N; i++)
         size += config->constraints[i]->dims_calculate_size(config->constraints[i]);
 
-    // qp solver
+    // qp_solver
     size += config->qp_solver->dims_calculate_size(config->qp_solver, N);
+
+    // relaxed_qp_solver
+    size += config->relaxed_qp_solver->dims_calculate_size(config->relaxed_qp_solver, N);
 
     return size;
 }
@@ -3463,6 +3466,7 @@ int ocp_nlp_solve_qp_and_correct_dual(ocp_nlp_config *config, ocp_nlp_dims *dims
                      ocp_nlp_memory *nlp_mem, ocp_nlp_workspace *nlp_work,
                      bool precondensed_lhs, ocp_qp_in *qp_in_, ocp_qp_out *qp_out_)
 {
+    // TODO: similarly, do for qp_work and mem;
     acados_timer timer;
     ocp_qp_xcond_solver_config *qp_solver = config->qp_solver;
 

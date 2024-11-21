@@ -2135,8 +2135,6 @@ void ocp_nlp_sqp_wfqp_config_initialize_default(void *config_)
     // TODO: make sure all functions in ocp_nlp_config are defined!
     ocp_nlp_config *config = (ocp_nlp_config *) config_;
 
-    config->with_feasible_qp = 1;
-
     config->opts_calculate_size = &ocp_nlp_sqp_wfqp_opts_calculate_size;
     config->opts_assign = &ocp_nlp_sqp_wfqp_opts_assign;
     config->opts_initialize_default = &ocp_nlp_sqp_wfqp_opts_initialize_default;

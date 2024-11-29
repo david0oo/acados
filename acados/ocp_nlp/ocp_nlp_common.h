@@ -74,7 +74,6 @@ extern "C" {
 typedef struct ocp_nlp_config
 {
     int N;  // number of stages
-    int with_feasible_qp;
 
     // solver-specific implementations of memory management functions
     acados_size_t (*opts_calculate_size)(void *config, void *dims);
@@ -116,6 +115,7 @@ typedef struct ocp_nlp_config
 
     // config structs of submodules
     ocp_qp_xcond_solver_config *qp_solver; // TODO rename xcond_solver
+    ocp_qp_xcond_solver_config *relaxed_qp_solver;
     ocp_nlp_dynamics_config **dynamics;
     ocp_nlp_cost_config **cost;
     ocp_nlp_constraints_config **constraints;
@@ -142,6 +142,7 @@ typedef struct ocp_nlp_dims
     void **dynamics;
     void **constraints;
     ocp_qp_xcond_solver_dims *qp_solver;  // xcond solver instead ??
+    ocp_qp_xcond_solver_dims *relaxed_qp_solver;  // xcond solver instead ??
     ocp_nlp_reg_dims *regularize;
 
     int *nv;  // number of primal variables (states+controls+slacks)

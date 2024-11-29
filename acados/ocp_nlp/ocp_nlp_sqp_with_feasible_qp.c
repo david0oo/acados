@@ -134,6 +134,12 @@ void ocp_nlp_sqp_wfqp_opts_initialize_default(void *config_, void *dims_, void *
     qp_solver->opts_set(qp_solver, opts->nlp_opts->qp_solver_opts, "tol_ineq", &opts->tol_ineq);
     qp_solver->opts_set(qp_solver, opts->nlp_opts->qp_solver_opts, "tol_comp", &opts->tol_comp);
 
+    // qp tolerance
+    config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_stat", &opts->tol_stat);
+    config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_eq", &opts->tol_eq);
+    config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_ineq", &opts->tol_ineq);
+    config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_comp", &opts->tol_comp);
+
     return;
 }
 
@@ -200,6 +206,7 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
             opts->tol_stat = *tol_stat;
             // TODO: set accuracy of the qp_solver to the minimum of current QP accuracy and the one specified.
             config->qp_solver->opts_set(config->qp_solver, opts->nlp_opts->qp_solver_opts, "tol_stat", value);
+            config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_stat", value);
         }
         else if (!strcmp(field, "tol_eq"))
         {
@@ -207,6 +214,7 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
             opts->tol_eq = *tol_eq;
             // TODO: set accuracy of the qp_solver to the minimum of current QP accuracy and the one specified.
             config->qp_solver->opts_set(config->qp_solver, opts->nlp_opts->qp_solver_opts, "tol_eq", value);
+            config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_eq", value);
         }
         else if (!strcmp(field, "tol_ineq"))
         {
@@ -214,6 +222,7 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
             opts->tol_ineq = *tol_ineq;
             // TODO: set accuracy of the qp_solver to the minimum of current QP accuracy and the one specified.
             config->qp_solver->opts_set(config->qp_solver, opts->nlp_opts->qp_solver_opts, "tol_ineq", value);
+            config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_ineq", value);
         }
         else if (!strcmp(field, "tol_comp"))
         {
@@ -221,6 +230,7 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
             opts->tol_comp = *tol_comp;
             // TODO: set accuracy of the qp_solver to the minimum of current QP accuracy and the one specified.
             config->qp_solver->opts_set(config->qp_solver, opts->nlp_opts->qp_solver_opts, "tol_comp", value);
+            config->relaxed_qp_solver->opts_set(config->relaxed_qp_solver, opts->nlp_opts->qp_solver_opts, "tol_comp", value);
         }
         else if (!strcmp(field, "tol_min_step_norm"))
         {
@@ -284,6 +294,100 @@ void ocp_nlp_sqp_wfqp_opts_get(void *config_, void *dims_, void *opts_,
  * memory
  ************************************************/
 
+
+static void ocp_nlp_update_qp_solver_ns_from_qp_solver_nsbxug(void *config_, void *dims_, int stage)
+{
+    ocp_nlp_config *config = config_;
+    ocp_nlp_dims *dims = dims_;
+
+    int tmp_int;
+    int ns = 0;
+    config->qp_solver->dims_get(config->qp_solver, dims->qp_solver, stage, "nsbu", &tmp_int);
+    ns += tmp_int;
+    config->qp_solver->dims_get(config->qp_solver, dims->qp_solver, stage, "nsbx", &tmp_int);
+    ns += tmp_int;
+    config->qp_solver->dims_get(config->qp_solver, dims->qp_solver, stage, "nsg", &tmp_int);
+    ns += tmp_int;
+    config->qp_solver->dims_set(config->qp_solver, dims->qp_solver, stage, "ns", &ns);
+}
+
+
+static void setup_relaxed_qp_solver_dimensions(
+    ocp_nlp_config *config,
+    ocp_nlp_dims *dims,
+    ocp_nlp_sqp_wfqp_opts *opts)
+{
+    int N = dims->N;
+    int tmp_int, i;
+
+    /* dimensions that are the same as for QP solver */
+    for (i = 0; i <= N; i++)
+    {
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nx", dims->nx+i);
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nu", dims->nu+i);
+        // nbx
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nbx", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nbx", &tmp_int);
+        // nbu
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nbu", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nbu", &tmp_int);
+        // ng
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "ng_qp_solver", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->qp_solver, dims->relaxed_qp_solver, i, "ng", &tmp_int);
+        // nbue
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nbue", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nbue", &tmp_int);
+
+        // nbxe
+        // TODO: add warning / error if nonzero for i > 0?
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nbxe", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nbxe", &tmp_int);
+        // nge
+        // TODO: add warning / error if nonzero, otherwise there is a slacked equality.
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nge_qp_solver", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->qp_solver, dims->relaxed_qp_solver, i, "nge", &tmp_int);
+    }
+    /* dimensions that are different compared to standard QP solver */
+    // nsbx_0_rel = nsbx_0
+    i = 0;
+    config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nsbx", &tmp_int);
+    config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nsbx", &tmp_int);
+    // TODO: do we want to check if nsbx_0 is 0?
+    // if (tmp_int > 0)
+    // {
+    // }
+    for (i = 0; i <= N; i++)
+    {
+        if (i > 0)
+        {
+            // nsbx_rel = nbx
+            config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nbx", &tmp_int);
+            config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nsbx", &tmp_int);
+        }
+        // nsbu_rel = nsbu
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "nsbu", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nsbu", &tmp_int);
+        // nsg_relaxed = ng
+        config->constraints[i]->dims_get(config->constraints[i], dims->constraints[i], "ng_qp_solver", &tmp_int);
+        config->relaxed_qp_solver->dims_set(config->qp_solver, dims->relaxed_qp_solver, i, "nsg", &tmp_int);
+        // print warning that those are not tested!?
+    }
+
+    // set ns_rel according to nsbx, nsbu, nsg;
+    for (i = 0; i <= N; i++)
+    {
+        int ns = 0;
+        config->qp_solver->dims_get(config->qp_solver, dims->relaxed_qp_solver, i, "nsbu", &tmp_int);
+        ns += tmp_int;
+        config->qp_solver->dims_get(config->qp_solver, dims->relaxed_qp_solver, i, "nsbx", &tmp_int);
+        ns += tmp_int;
+        config->qp_solver->dims_get(config->qp_solver, dims->relaxed_qp_solver, i, "nsg", &tmp_int);
+        ns += tmp_int;
+        config->relaxed_qp_solver->dims_set(config->qp_solver, dims->relaxed_qp_solver, i, "ns", &ns);
+    }
+}
+
+
 acados_size_t ocp_nlp_sqp_wfqp_memory_calculate_size(void *config_, void *dims_, void *opts_, void *in_)
 {
     ocp_nlp_dims *dims = dims_;
@@ -296,6 +400,9 @@ acados_size_t ocp_nlp_sqp_wfqp_memory_calculate_size(void *config_, void *dims_,
     int N = dims->N;
 
     size += sizeof(ocp_nlp_sqp_wfqp_memory);
+
+    // setup relaxed_qp_solver dimension
+    setup_relaxed_qp_solver_dimensions(config, dims, opts);
 
     // nlp mem
     size += ocp_nlp_memory_calculate_size(config, dims, nlp_opts, in);
@@ -543,6 +650,7 @@ acados_size_t ocp_nlp_sqp_wfqp_workspace_calculate_size(void *config_, void *dim
     // nlp
     size += ocp_nlp_workspace_calculate_size(config, dims, nlp_opts, in);
 
+    // TODO: add qp_res for relaxed QP?
     if (nlp_opts->ext_qp_res)
     {
         // qp res
@@ -556,7 +664,7 @@ acados_size_t ocp_nlp_sqp_wfqp_workspace_calculate_size(void *config_, void *dim
 }
 
 /*
-Gets the infinity norm of the multipliers which are returned from the QP. 
+Gets the infinity norm of the multipliers which are returned from the QP.
 This function does not take into account the multiplier values of the slack variables bounds.
 
 This function assumes that the masked multipliers are always zero.
@@ -1465,7 +1573,18 @@ static int prepare_and_solve_QP(ocp_nlp_config* config, ocp_nlp_sqp_wfqp_opts* o
                     acados_timer timer0, acados_timer timer1)
 {
     ocp_nlp_opts* nlp_opts = opts->nlp_opts;
-    ocp_qp_xcond_solver_config *qp_solver = config->qp_solver;
+
+    bool is_relaxed = true;
+    ocp_qp_xcond_solver_config *qp_solver;
+    if (is_relaxed)
+    {
+        qp_solver = config->qp_solver;
+    }
+    else
+    {
+        qp_solver = config->relaxed_qp_solver;
+    }
+
     // ocp_nlp_res *nlp_res = nlp_mem->nlp_res;
     ocp_nlp_timings *nlp_timings = nlp_mem->nlp_timings;
 
@@ -1814,7 +1933,6 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
     ocp_nlp_in *nlp_in = nlp_in_;
     ocp_nlp_out *nlp_out = nlp_out_;
     ocp_nlp_memory *nlp_mem = mem->nlp_mem;
-    // ocp_qp_xcond_solver_config *qp_solver = config->qp_solver;
     ocp_nlp_res *nlp_res = nlp_mem->nlp_res;
     ocp_nlp_timings *nlp_timings = nlp_mem->nlp_timings;
 
@@ -2111,7 +2229,7 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             if (pred_l1_inf_QP_optimality < 0.0)
             {
                 nlp_mem->objective_multiplier = 1e-1*nlp_mem->objective_multiplier;
-            } 
+            }
             else
             {
                 nlp_mem->objective_multiplier = 5e-1*nlp_mem->objective_multiplier;
@@ -2156,6 +2274,7 @@ void ocp_nlp_sqp_wfqp_memory_reset_qp_solver(void *config_, void *dims_, void *n
     config->qp_solver->memory_reset(qp_solver, dims->qp_solver,
         nlp_mem->qp_in, nlp_mem->qp_out, opts->nlp_opts->qp_solver_opts,
         nlp_mem->qp_solver_mem, nlp_work->qp_work);
+    // TODO: reset both QP solvers?!
 }
 
 
@@ -2359,6 +2478,7 @@ void ocp_nlp_sqp_wfqp_get(void *config_, void *dims_, void *mem_, const char *fi
     }
     else if (!strcmp("qp_xcond_dims", field))
     {
+        // TODO: remove this field in all NLP solvers? seems not needed.
         void **value = return_value_;
         *value = dims->qp_solver->xcond_dims;
     }
@@ -2376,6 +2496,8 @@ void ocp_nlp_sqp_wfqp_terminate(void *config_, void *mem_, void *work_)
     ocp_nlp_sqp_wfqp_workspace *work = work_;
 
     config->qp_solver->terminate(config->qp_solver, mem->nlp_mem->qp_solver_mem, work->nlp_work->qp_work);
+    // TODO: fix mem and work.
+    config->relaxed_qp_solver->terminate(config->relaxed_qp_solver, mem->nlp_mem->qp_solver_mem, work->nlp_work->qp_work);
 }
 
 bool ocp_nlp_sqp_wfqp_is_real_time_algorithm()
@@ -2387,8 +2509,6 @@ void ocp_nlp_sqp_wfqp_config_initialize_default(void *config_)
 {
     // TODO: make sure all functions in ocp_nlp_config are defined!
     ocp_nlp_config *config = (ocp_nlp_config *) config_;
-
-    config->with_feasible_qp = 1;
 
     config->opts_calculate_size = &ocp_nlp_sqp_wfqp_opts_calculate_size;
     config->opts_assign = &ocp_nlp_sqp_wfqp_opts_assign;

@@ -467,6 +467,14 @@ void ocp_nlp_dims_set_opt_vars(void *config_, void *dims_, const char *field,
         {
             config->qp_solver->dims_set(config->qp_solver, dims->qp_solver, i, "nx", &int_array[i]);
         }
+        // relaxed qp solver
+        if (config->with_feasible_qp)
+        {
+            for (int i = 0; i <= N; i++)
+            {
+                config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nx", &int_array[i]);
+            }
+        }
         // regularization
         for (int i = 0; i <= N; i++)
         {
@@ -510,6 +518,14 @@ void ocp_nlp_dims_set_opt_vars(void *config_, void *dims_, const char *field,
         for (int i = 0; i <= N; i++)
         {
             config->qp_solver->dims_set(config->qp_solver, dims->qp_solver, i, "nu", &int_array[i]);
+        }
+        // relaxed qp solver
+        if (config->with_feasible_qp)
+        {
+            for (int i = 0; i <= N; i++)
+            {
+                config->relaxed_qp_solver->dims_set(config->relaxed_qp_solver, dims->relaxed_qp_solver, i, "nu", &int_array[i]);
+            }
         }
         // regularization
         for (int i = 0; i <= N; i++)

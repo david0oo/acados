@@ -1998,7 +1998,7 @@ static int byrd_omojokun_direction_computation(ocp_nlp_dims *dims,
 
     print_debug_output("Solve Feasibility QP!\n", nlp_opts->print_level, 2);
     /* Solve steering QP: We solve without gradient and only with constraint Hessian */
-    qp_status = prepare_and_solve_QP(config, opts, qp_in, qp_out, dims, mem,    nlp_in, nlp_out,
+    qp_status = prepare_and_solve_QP(config, opts, qp_in, qp_out, dims, mem, nlp_in, nlp_out,
                 nlp_mem, nlp_work, sqp_iter, true, timer0, timer1);
     ocp_qp_out_get(nlp_work->tmp_qp_out, "qp_info", &qp_info_);
     qp_iter += qp_info_->num_iter;
@@ -2052,19 +2052,19 @@ static int byrd_omojokun_direction_computation(ocp_nlp_dims *dims,
 /********************************
 * Functions for standard QP
 *********************************/
-static void set_standard_qp_in_matrix_pointers(ocp_nlp_sqp_wfqp_memory *mem, ocp_qp_in *qp_in)
+static void set_relaxed_qp_in_matrix_pointers(ocp_nlp_sqp_wfqp_memory *mem, ocp_qp_in *qp_in)
 {
     // TODO: DANGER ZONE!
-    qp_in->BAbt = mem->relaxed_qp_in->BAbt; // dynamics matrix & vector work space
-	qp_in->RSQrq = mem->relaxed_qp_in->RSQrq; // hessian of cost & vector work space
-	qp_in->DCt = mem->relaxed_qp_in->DCt; // inequality constraints matrix
-	qp_in->d_mask = mem->relaxed_qp_in->d_mask; // inequality constraints matrix
+    mem->relaxed_qp_in->BAbt = qp_in->BAbt; // dynamics matrix & vector work space
+	mem->relaxed_qp_in->RSQrq = qp_in->RSQrq; // hessian of cost & vector work space
+	mem->relaxed_qp_in->DCt = qp_in->DCt; // inequality constraints matrix
+	mem->relaxed_qp_in->d_mask = qp_in->d_mask; // inequality constraints matrix
 
-    // mem->nlp_idxs_rev = mem->relaxed_qp_in->idxs_rev; // TODO: This is wrong vector!!!
-    qp_in->idxb = mem->relaxed_qp_in->idxb;
-    qp_in->idxe = mem->relaxed_qp_in->idxe;
-    qp_in->diag_H_flag = mem->relaxed_qp_in->diag_H_flag;
-    qp_in->m = mem->relaxed_qp_in->m; // TODO: Not sure what happens here
+    // mem->relaxed_qp_in->idxs_rev = mem->nlp_idxs_rev; // TODO: This is wrong vector!!!
+    mem->relaxed_qp_in->idxb = qp_in->idxb;
+    mem->relaxed_qp_in->idxe = qp_in->idxe;
+    mem->relaxed_qp_in->diag_H_flag = qp_in->diag_H_flag;
+    mem->relaxed_qp_in->m = qp_in->m; // TODO: Not sure what happens here
     // TODO: if we have slacks in the original QP how is this transferred here??
 }
 
@@ -2155,7 +2155,7 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
     omp_set_num_threads(opts->nlp_opts->num_threads);
 #endif
 
-    set_standard_qp_in_matrix_pointers(mem, qp_in);
+    set_relaxed_qp_in_matrix_pointers(mem, qp_in);
 
     ocp_nlp_initialize_submodules(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
     set_non_slacked_l2_penalties(config, dims, nlp_in, nlp_out, nlp_opts, mem, nlp_work);
@@ -2251,18 +2251,8 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
 
         // Compute the search direction
         int search_direction_status = 0;
-        search_direction_status = byrd_omojokun_direction_computation(dims,
-                                                                    config,
-                                                                    opts,
-                                                                    nlp_opts,
-                                                                    nlp_in,
-                                                                    nlp_out,
-                                                                    mem,
-                                                                    work,
-                                                                    current_l1_infeasibility,
-                                                                    sqp_iter,
-                                                                    timer0,
-                                                                    timer1);
+        search_direction_status = byrd_omojokun_direction_computation(dims, config, opts, nlp_opts,
+                nlp_in, nlp_out, mem, work, current_l1_infeasibility, sqp_iter, timer0, timer1);
 
         if (search_direction_status == 1)
         {

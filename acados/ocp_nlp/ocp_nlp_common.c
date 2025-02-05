@@ -370,6 +370,10 @@ ocp_nlp_dims *ocp_nlp_dims_assign(void *config_, void *raw_memory)
     dims->qp_solver = config->qp_solver->dims_assign(config->qp_solver, N, c_ptr);
     c_ptr += config->qp_solver->dims_calculate_size(config->qp_solver, N);
 
+    // relaxed_qp_solver
+    dims->relaxed_qp_solver = config->relaxed_qp_solver->dims_assign(config->relaxed_qp_solver, N, c_ptr);
+    c_ptr += config->relaxed_qp_solver->dims_calculate_size(config->relaxed_qp_solver, N);
+
     // assert
     assert((char *) raw_memory + ocp_nlp_dims_calculate_size(config_) >= c_ptr);
 

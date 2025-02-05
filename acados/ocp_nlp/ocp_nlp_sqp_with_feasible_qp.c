@@ -130,7 +130,7 @@ static void allocate_standard_qp_solver(ocp_nlp_sqp_wfqp_memory *mem,
     memsize = malloc(size);
     mem->standard_qp_solver_dims = ocp_qp_xcond_solver_dims_assign(mem->standard_qp_solver, N, memsize);
 
-    // Setup the solver dimensions
+    // setup dimensions
     setup_standard_qp_solver_dimensions(mem, config, dims, opts);
 
     // Allocate ocp_qp_xcond_solver_memory
@@ -149,7 +149,7 @@ static void allocate_standard_qp_solver(ocp_nlp_sqp_wfqp_memory *mem,
                                                         opts->nlp_opts->qp_solver_opts);
     mem->standard_qp_solver_work = malloc(size);
 
-    // Don't allocate solver opts, use same as before.
+    // don't allocate solver opts, use same as before.
 
     // Allocate qp_in
     size = ocp_qp_in_calculate_size(mem->standard_qp_solver_dims->orig_dims);

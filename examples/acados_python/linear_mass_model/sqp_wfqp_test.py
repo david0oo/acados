@@ -42,13 +42,13 @@ def main():
     params = {'use_merit_fun_only': [False],
               'initial_obj_multiplier': [1e0, 1e-1]}
 
-    # SETTINGS:
-    SOFTEN_CONTROLS = True
-    SOFTEN_OBSTACLE = False
-    SOFTEN_TERMINAL = True
-    PLOT = False
-    solve_maratos_ocp(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, PLOT, {'use_merit_fun_only': False,
-                                                                                'initial_obj_multiplier':1e0})
+    # # SETTINGS:
+    # SOFTEN_CONTROLS = True
+    # SOFTEN_OBSTACLE = False
+    # SOFTEN_TERMINAL = True
+    # PLOT = False
+    # solve_maratos_ocp(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, PLOT, {'use_merit_fun_only': False,
+    #                                                                             'initial_obj_multiplier':1e0})
 
     SOFTEN_CONTROLS = False
     SOFTEN_OBSTACLE = False

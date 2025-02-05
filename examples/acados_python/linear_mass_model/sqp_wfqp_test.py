@@ -99,8 +99,8 @@ def feasible_qp_index_test(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, N,
     dims = ocp_solver.acados_ocp.dims
 
     for i in range(N+1):
-        idxs = ocp_solver.get_from_qp_in(i,"idxs").squeeze()
-        idxb = ocp_solver.get_from_qp_in(i,"idxb").squeeze()
+        idxs = ocp_solver.get_from_qp_in(i, "relaxed_idxs").squeeze()
+        idxb = ocp_solver.get_from_qp_in(i, "relaxed_idxb").squeeze()
 
         # Initial stage
         if i == 0:

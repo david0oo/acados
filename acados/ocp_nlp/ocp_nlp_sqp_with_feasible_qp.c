@@ -2243,7 +2243,6 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
 #endif
             nlp_mem->iter = sqp_iter;
             nlp_timings->time_tot = acados_toc(&timer0);
-            destroy_standard_qp_solver_memory(mem); // do I need that? Since config is anyway destroyed in the interface?
             return mem->nlp_mem->status;
         }
 

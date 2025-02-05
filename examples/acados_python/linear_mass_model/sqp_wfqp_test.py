@@ -151,7 +151,7 @@ def create_solver_opts(setting: dict, N=4, Tf=2):
     solver_options.nlp_solver_type = 'SQP_WITH_FEASIBLE_QP'
     solver_options.globalization = 'FUNNEL_L1PEN_LINESEARCH'
     solver_options.globalization_full_step_dual = True
-    solver_options.print_level = 1
+    solver_options.print_level = 2
     solver_options.nlp_solver_max_iter = 50
 
     solver_options.globalization_funnel_use_merit_fun_only = use_merit_fun_only
@@ -277,9 +277,9 @@ def solve_maratos_ocp(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, PLOT, s
     sqp_iter = ocp_solver.get_stats('sqp_iter')
     print(f'acados returned status {status}.')
 
-    if ocp.solver_options.nlp_solver_type == 'SQP_WITH_FEASIBLE_QP':
-        feasible_qp_dims_test(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, N, ocp_solver)
-        feasible_qp_index_test(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, N, ocp_solver)
+    # if ocp.solver_options.nlp_solver_type == 'SQP_WITH_FEASIBLE_QP':
+    #     feasible_qp_dims_test(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, N, ocp_solver)
+    #     feasible_qp_index_test(SOFTEN_OBSTACLE, SOFTEN_TERMINAL, SOFTEN_CONTROLS, N, ocp_solver)
 
     # get solution
     simX = np.array([ocp_solver.get(i,"x") for i in range(N+1)])

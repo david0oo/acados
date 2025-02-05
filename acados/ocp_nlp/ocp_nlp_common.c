@@ -65,6 +65,9 @@ acados_size_t ocp_nlp_config_calculate_size(int N)
     // qp solver
     size += ocp_qp_xcond_solver_config_calculate_size();
 
+    // relaxed_qp_solver
+    size += ocp_qp_xcond_solver_config_calculate_size();
+
     // regularization
     size += ocp_nlp_reg_config_calculate_size();
 
@@ -101,8 +104,12 @@ ocp_nlp_config *ocp_nlp_config_assign(int N, void *raw_memory)
     config->N = N;
     config->with_feasible_qp = false;
 
-    // qp solver
+    // qp_solver
     config->qp_solver = ocp_qp_xcond_solver_config_assign(c_ptr);
+    c_ptr += ocp_qp_xcond_solver_config_calculate_size();
+
+    // relaxed_qp_solver
+    config->relaxed_qp_solver = ocp_qp_xcond_solver_config_assign(c_ptr);
     c_ptr += ocp_qp_xcond_solver_config_calculate_size();
 
     // regularization
@@ -208,6 +215,9 @@ acados_size_t ocp_nlp_dims_calculate_size(void *config_)
 
     // qp solver
     size += config->qp_solver->dims_calculate_size(config->qp_solver, N);
+
+    // relaxed_qp_solver
+    size += config->relaxed_qp_solver->dims_calculate_size(config->relaxed_qp_solver, N);
 
     return size;
 }

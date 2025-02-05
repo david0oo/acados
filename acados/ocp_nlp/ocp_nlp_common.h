@@ -116,6 +116,7 @@ typedef struct ocp_nlp_config
 
     // config structs of submodules
     ocp_qp_xcond_solver_config *qp_solver; // TODO rename xcond_solver
+    ocp_qp_xcond_solver_config *relaxed_qp_solver;
     ocp_nlp_dynamics_config **dynamics;
     ocp_nlp_cost_config **cost;
     ocp_nlp_constraints_config **constraints;

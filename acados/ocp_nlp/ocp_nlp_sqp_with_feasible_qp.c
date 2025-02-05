@@ -1520,7 +1520,7 @@ static int prepare_and_solve_QP(ocp_nlp_config* config, ocp_nlp_sqp_wfqp_opts* o
     ocp_nlp_dump_qp_in_to_file(qp_in, sqp_iter, 0);
 #endif
 
-    int qp_status = ocp_nlp_solve_qp_and_correct_dual(config, dims, nlp_opts, nlp_mem, nlp_work, false, qp_in, qp_out, mem->relaxed_qp_solver);
+    int qp_status = ocp_nlp_solve_qp_and_correct_dual(config, dims, nlp_opts, nlp_mem, nlp_work, false, qp_in, qp_out, &mem->relaxed_qp_solver);
 
     // restore default warm start
     if (sqp_iter==0)

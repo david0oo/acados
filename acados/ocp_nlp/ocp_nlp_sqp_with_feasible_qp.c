@@ -2239,6 +2239,7 @@ static int squid_search_direction_computation(ocp_nlp_dims *dims,
                     nlp_mem, nlp_work, sqp_iter, true, timer0, timer1);
         ocp_qp_out_get(nlp_work->tmp_qp_out, "qp_info", &qp_info_);
         qp_iter += qp_info_->num_iter;
+        printf("Feasibility QP successfully solved!\n");
         if (qp_status != ACADOS_SUCCESS)
         {
             if (nlp_opts->print_level >=1)
@@ -2664,50 +2665,50 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
 
         // Compute the search direction
         int search_direction_status = 0;
-        // if (opts->use_steering_rules)
-        // {
-        //     search_direction_status = steering_direction_penalty_update(dims,
-        //                                                             config,
-        //                                                             opts,
-        //                                                             nlp_opts,
-        //                                                             nlp_in,
-        //                                                             nlp_out,
-        //                                                             mem,
-        //                                                             work,
-        //                                                             current_l1_infeasibility,
-        //                                                             sqp_iter,
-        //                                                             timer0,
-        //                                                             timer1);
-        // }
-        // else
-        // {
-        //     search_direction_status = squid_search_direction_computation(dims,
-        //                                                             config,
-        //                                                             opts,
-        //                                                             nlp_opts,
-        //                                                             nlp_in,
-        //                                                             nlp_out,
-        //                                                             mem,
-        //                                                             work,
-        //                                                             current_l1_infeasibility,
-        //                                                             sqp_iter,
-        //                                                             timer0,
-        //                                                             timer1);
-        // }
+        if (opts->use_steering_rules)
+        {
+            search_direction_status = steering_direction_penalty_update(dims,
+                                                                    config,
+                                                                    opts,
+                                                                    nlp_opts,
+                                                                    nlp_in,
+                                                                    nlp_out,
+                                                                    mem,
+                                                                    work,
+                                                                    current_l1_infeasibility,
+                                                                    sqp_iter,
+                                                                    timer0,
+                                                                    timer1);
+        }
+        else
+        {
+            search_direction_status = squid_search_direction_computation(dims,
+                                                                    config,
+                                                                    opts,
+                                                                    nlp_opts,
+                                                                    nlp_in,
+                                                                    nlp_out,
+                                                                    mem,
+                                                                    work,
+                                                                    current_l1_infeasibility,
+                                                                    sqp_iter,
+                                                                    timer0,
+                                                                    timer1);
+        }
 
         // solve standard QP
-        search_direction_status = standard_qp_direction(dims,
-                                                        config,
-                                                        opts,
-                                                        nlp_opts,
-                                                        nlp_in,
-                                                        nlp_out,
-                                                        mem,
-                                                        work,
-                                                        current_l1_infeasibility,
-                                                        sqp_iter,
-                                                        timer0,
-                                                        timer1);
+        // search_direction_status = standard_qp_direction(dims,
+        //                                                 config,
+        //                                                 opts,
+        //                                                 nlp_opts,
+        //                                                 nlp_in,
+        //                                                 nlp_out,
+        //                                                 mem,
+        //                                                 work,
+        //                                                 current_l1_infeasibility,
+        //                                                 sqp_iter,
+        //                                                 timer0,
+        //                                                 timer1);
 
         if (search_direction_status == 1)
         {

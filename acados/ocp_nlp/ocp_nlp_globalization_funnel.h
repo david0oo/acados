@@ -86,6 +86,11 @@ void ocp_nlp_globalization_funnel_opts_set(void *config, void *opts, const char 
 
 typedef struct
 {
+    // testing
+    double infeasibility_min; // needed for phase 1
+    int funnel_phase; // we implement a similar phase as ipopt/tolerance-tube method
+
+    // old stuff
     double funnel_width;
     char funnel_iter_type;
     bool funnel_penalty_mode;

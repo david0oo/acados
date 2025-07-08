@@ -853,7 +853,11 @@ class AcadosOcpOptions:
 
     @property
     def reg_epsilon(self):
-        """Epsilon for regularization, used if regularize_method in ['PROJECT', 'MIRROR', 'CONVEXIFY', 'GERSHGORIN_LEVENBERG_MARQUARDT']."""
+        """Epsilon for regularization, used if regularize_method in ['PROJECT', 'MIRROR', 'CONVEXIFY', 'GERSHGORIN_LEVENBERG_MARQUARDT'].
+
+        Type: float.
+        Default: 1e-4.
+        """
         return self.__reg_epsilon
 
     @property
@@ -1496,6 +1500,8 @@ class AcadosOcpOptions:
 
     @reg_epsilon.setter
     def reg_epsilon(self, reg_epsilon):
+        if not isinstance(reg_epsilon, float) or reg_epsilon < 0:
+            raise ValueError(f'Invalid reg_epsilon value, expected float >= 0, got {reg_epsilon}')
         self.__reg_epsilon = reg_epsilon
 
     @reg_max_cond_block.setter
@@ -1720,10 +1726,10 @@ class AcadosOcpOptions:
 
     @globalization_fixed_step_length.setter
     def globalization_fixed_step_length(self, globalization_fixed_step_length):
-        if isinstance(globalization_fixed_step_length, float) and globalization_fixed_step_length >= 0.:
+        if isinstance(globalization_fixed_step_length, float) and globalization_fixed_step_length >= 0 or globalization_fixed_step_length <= 1.0:
             self.__globalization_fixed_step_length = globalization_fixed_step_length
         else:
-            raise ValueError('Invalid globalization_fixed_step_length value. globalization_fixed_step_length must be a positive float.')
+            raise ValueError('Invalid globalization_fixed_step_length value. globalization_fixed_step_length must be a float in [0, 1].')
 
     @qpscaling_ub_max_abs_eig.setter
     def qpscaling_ub_max_abs_eig(self, qpscaling_ub_max_abs_eig):

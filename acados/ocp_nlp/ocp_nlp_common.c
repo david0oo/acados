@@ -4168,6 +4168,7 @@ int ocp_nlp_perform_second_order_correction(ocp_nlp_config *config, ocp_nlp_dims
     // d_i = c_i(x_k + p_k) - \nabla c_i(x_k)^T * p_k
     struct blasfeo_dvec *tmp_fun_vec;
 
+
     for (ii = 0; ii <= N; ii++)
     {
         if (ii < N)
@@ -4225,6 +4226,8 @@ int ocp_nlp_perform_second_order_correction(ocp_nlp_config *config, ocp_nlp_dims
         // printf("SOC: qp_in->d final value\n");
         // blasfeo_print_exp_dvec(2*nb[ii]+2*ng[ii], qp_in->d+ii, 0);
     }
+
+    printf("Updated function value\n\n");
 
     if (nlp_opts->print_level > 3)
     {
@@ -4294,7 +4297,9 @@ int ocp_nlp_perform_second_order_correction(ocp_nlp_config *config, ocp_nlp_dims
         return 1;
     }
 
-    return 0;
+    printf("Solved SOC QP successfully\n\n");
+
+    return ACADOS_SUCCESS;
 }
 
 int ocp_nlp_solve_qp_and_correct_dual(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_opts *nlp_opts,

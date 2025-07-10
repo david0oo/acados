@@ -1696,11 +1696,6 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             nlp_mem->qp_cost_value = ocp_nlp_compute_qp_objective_value(dims, nominal_qp_in, nominal_qp_out, nlp_work);
             nlp_mem->predicted_infeasibility_reduction = mem->pred_l1_inf_QP;
             nlp_mem->predicted_optimality_reduction = -ocp_nlp_compute_gradient_directional_derivative(dims, nominal_qp_in, nominal_qp_out);
-            if (nlp_mem->predicted_optimality_reduction < -1e-10)
-            {
-                printf("Direction not a descent direction!\n");
-                return 1;
-            }
         }
         // NOTE on timings: currently all within globalization is accounted for within time_glob.
         //   QP solver times could be also attributed there alternatively. Cleanest would be to save them seperately.

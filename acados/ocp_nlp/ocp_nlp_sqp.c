@@ -749,11 +749,6 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             nlp_mem->qp_cost_value = ocp_nlp_compute_qp_objective_value(dims, qp_in, qp_out, nlp_work);
             nlp_mem->predicted_infeasibility_reduction = ocp_nlp_get_l1_infeasibility(config, dims, nlp_mem);
             nlp_mem->predicted_optimality_reduction = -ocp_nlp_compute_gradient_directional_derivative(dims, qp_in, qp_out);
-            if (nlp_mem->predicted_optimality_reduction < -1e-10)
-            {
-                printf("Direction a descent direction: %.4e\n", -nlp_mem->predicted_optimality_reduction);
-                exit(1);
-            }
         }
 
         // Compute the step norm

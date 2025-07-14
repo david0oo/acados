@@ -341,11 +341,6 @@ bool is_trial_iterate_acceptable_to_funnel(ocp_nlp_globalization_funnel_memory *
     print_debug_output_double("predicted_reduction_infeasibility", predicted_reduction_infeasibility, nlp_opts->print_level, 2);
     print_debug_output_double("predicted_reduction_merit", predicted_reduction_merit, nlp_opts->print_level, 2);
 
-    if (alpha < 1.0 && trial_infeasibility > current_infeasibility)
-    {
-        printf("IPOPT would trigger SOC!\n");
-    }
-
     if (opts->use_merit_fun_only) // We only check the penalty method but not the funnel!
     {
         mem->funnel_penalty_mode = true;
@@ -416,6 +411,28 @@ bool is_trial_iterate_acceptable_to_funnel(ocp_nlp_globalization_funnel_memory *
     return accept_step;
 }
 
+static bool perform_funnel_soc(ocp_nlp_config *config,
+                            ocp_nlp_dims *dims,
+                            ocp_nlp_in *nlp_in,
+                            ocp_nlp_out *nlp_out,
+                            ocp_nlp_memory *nlp_mem,
+                            void *solver_mem,
+                            ocp_nlp_workspace *nlp_work,
+                            ocp_nlp_opts *nlp_opts,
+                            double *step_size)
+{
+    // enter SOC loop
+    // evaluate constraints at new trial iterate
+
+    // scale the constraint vector
+
+    // solve QP
+
+    // compute new trial iterate SOC
+
+    //globalization
+}
+
 int backtracking_line_search(ocp_nlp_config *config,
                             ocp_nlp_dims *dims,
                             ocp_nlp_in *nlp_in,
@@ -454,7 +471,7 @@ int backtracking_line_search(ocp_nlp_config *config,
     {
         // Calculate trial iterate: trial_iterate = current_iterate + alpha * direction
         config->step_update(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem,
-                                     nlp_work, nlp_work->tmp_nlp_out, solver_mem, alpha, globalization_opts->full_step_dual);
+                            nlp_work, nlp_work->tmp_nlp_out, solver_mem, alpha, globalization_opts->full_step_dual);
 
         ///////////////////////////////////////////////////////////////////////
         // Evaluate cost function at trial iterate
@@ -525,6 +542,13 @@ int backtracking_line_search(ocp_nlp_config *config,
             mem->l1_infeasibility = trial_infeasibility;
             return ACADOS_SUCCESS;
         }
+
+        if (alpha == 1.0 && trial_infeasibility < current_infeasibility)
+        {
+            printf("IPOPT would trigger SOC!\n");
+            accept_step = perform_funnel_soc();
+        }
+
 
         if (alpha < globalization_opts->alpha_min)
         {

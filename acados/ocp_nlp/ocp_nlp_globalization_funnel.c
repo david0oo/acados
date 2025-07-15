@@ -418,19 +418,135 @@ static bool perform_funnel_soc(ocp_nlp_config *config,
                             ocp_nlp_memory *nlp_mem,
                             void *solver_mem,
                             ocp_nlp_workspace *nlp_work,
-                            ocp_nlp_opts *nlp_opts,
-                            double *step_size)
+                            ocp_nlp_opts *nlp_opts)
 {
+    ocp_nlp_globalization_funnel_opts *opts = nlp_opts->globalization;
+    ocp_nlp_globalization_opts *globalization_opts = opts->globalization_opts;
+    ocp_nlp_globalization_funnel_memory *mem = nlp_mem->globalization;
+
+    int N = dims->N;
+    double predicted_reduction_merit = 0.0; // Initialize this here
+    double predicted_reduction_objective = nlp_mem->predicted_optimality_reduction;
+    double predicted_reduction_infeasibility = nlp_mem->predicted_infeasibility_reduction;
+    double trial_cost;
+    double trial_infeasibility = 0.0;
+    double actual_reduction_objective;
+    bool accept_step;
+    double current_infeasibility = mem->l1_infeasibility;
+    double current_cost = nlp_mem->cost_value;
+
+    int i, soc_status;
+    int p_max = 4;
+    // for higher values, we need to check implementation
+    ocp_qp_out *soc_qp_out = nlp_work->tmp_qp_out;
+    ocp_qp_in *qp_in = nlp_mem->qp_in;
+    double infeasibility_soc_old = current_infeasibility;
     // enter SOC loop
-    // evaluate constraints at new trial iterate
+    // trial iterate is here: nlp_work->tmp_nlp_out
+    for (int p=0; p<p_max; ++p)
+    {
+        // constraints should already be evaluated at trial iterate
 
-    // scale the constraint vector
+        // TODO: scale the constraint vector??
 
-    // solve QP
+        // solve QP
+        soc_status = ocp_nlp_perform_second_order_correction(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work, qp_in, soc_qp_out);
+        // line search does not care about status in soc??
+        if (soc_status != ACADOS_SUCCESS)
+        {
+            return false;
+        }
 
-    // compute new trial iterate SOC
+        // compute new trial iterate SOC
+        // Calculate trial iterate: trial_iterate = current_iterate + alpha * direction
+        config->step_update(config, dims, nlp_in, nlp_out, soc_qp_out, nlp_opts, nlp_mem,
+                            nlp_work, nlp_work->tmp_nlp_out, solver_mem, 1.0, globalization_opts->full_step_dual);
 
-    //globalization
+        ///////////////////////////////////////////////////////////////////////
+        // Evaluate cost function at trial iterate
+        // set evaluation point to tmp_nlp_out
+        ocp_nlp_set_primal_variable_pointers_in_submodules(config, dims, nlp_in, nlp_work->tmp_nlp_out, nlp_mem);
+        // compute trial dynamics value
+#if defined(ACADOS_WITH_OPENMP)
+    #pragma omp parallel for
+#endif
+        for (i=0; i<N; i++)
+        {
+            // dynamics: Note has to be first, because cost_integration might be used.
+            config->dynamics[i]->compute_fun(config->dynamics[i], dims->dynamics[i], nlp_in->dynamics[i],
+                                            nlp_opts->dynamics[i], nlp_mem->dynamics[i], nlp_work->dynamics[i]);
+        }
+        // compute trial objective function value
+#if defined(ACADOS_WITH_OPENMP)
+    #pragma omp parallel for
+#endif
+        for (i=0; i<=N; i++)
+        {
+            // cost
+            config->cost[i]->compute_fun(config->cost[i], dims->cost[i], nlp_in->cost[i], nlp_opts->cost[i],
+                                        nlp_mem->cost[i], nlp_work->cost[i]);
+        }
+#if defined(ACADOS_WITH_OPENMP)
+    #pragma omp parallel for
+#endif
+        for (i=0; i<=N; i++)
+        {
+            // constr
+            config->constraints[i]->compute_fun(config->constraints[i], dims->constraints[i],
+                                                nlp_in->constraints[i], nlp_opts->constraints[i],
+                                                nlp_mem->constraints[i], nlp_work->constraints[i]);
+        }
+        // reset evaluation point to SQP iterate
+        ocp_nlp_set_primal_variable_pointers_in_submodules(config, dims, nlp_in, nlp_out, nlp_mem);
+
+        //globalization
+        // TODO:
+        double *tmp_fun;
+        // Calculate the trial objective and constraint violation
+        trial_cost = 0.0;
+        for(i=0; i<=N; i++)
+        {
+            tmp_fun = config->cost[i]->memory_get_fun_ptr(nlp_mem->cost[i]);
+            trial_cost += *tmp_fun;
+        }
+        trial_infeasibility = ocp_nlp_get_l1_infeasibility(config, dims, nlp_mem);
+        printf("SOC: Current infeasibility: %.4e\n", current_infeasibility);
+        printf("SOC: New trial infeasibility: %.4e\n", trial_infeasibility);
+
+        if (trial_infeasibility > 0.99*infeasibility_soc_old)
+        {
+            printf("No improvement with SOC!\n");
+            return false;
+        }
+        infeasibility_soc_old = trial_infeasibility;
+
+        ///////////////////////////////////////////////////////////////////////
+        // Evaluate merit function at trial point
+        double trial_merit = mem->penalty_parameter*trial_cost + trial_infeasibility;
+        predicted_reduction_merit = mem->penalty_parameter * predicted_reduction_objective + predicted_reduction_infeasibility;
+        actual_reduction_objective = nlp_mem->cost_value - trial_cost;
+        double current_merit = mem->penalty_parameter*current_cost + current_infeasibility;
+
+        // TODO: check if inside of funnel or not and standard funnel arguments
+        accept_step = is_trial_iterate_acceptable_to_funnel(mem, nlp_opts,
+                                                            predicted_reduction_objective, actual_reduction_objective,
+                                                            1.0, current_infeasibility,
+                                                            trial_infeasibility, current_cost,
+                                                            trial_cost, current_merit, trial_merit,
+                                                            predicted_reduction_merit, predicted_reduction_infeasibility);
+
+        printf("Accepted step in SOC!\n");
+        if (accept_step)
+        {
+            mem->alpha = 1.0;
+            // *step_size = alpha;
+            nlp_mem->cost_value = trial_cost;
+            mem->l1_infeasibility = trial_infeasibility;
+            return true;
+        }
+
+    }
+    return false;
 }
 
 int backtracking_line_search(ocp_nlp_config *config,
@@ -526,6 +642,9 @@ int backtracking_line_search(ocp_nlp_config *config,
         predicted_reduction_merit = mem->penalty_parameter * predicted_reduction_objective + predicted_reduction_infeasibility;
         actual_reduction_objective = nlp_mem->cost_value - trial_cost;
 
+        printf("current inf: %.4e\n", current_infeasibility);
+        printf("trial inf: %.4e\n", trial_infeasibility);
+
         // Funnel globalization
         accept_step = is_trial_iterate_acceptable_to_funnel(mem, nlp_opts,
                                                             predicted_reduction_objective, actual_reduction_objective,
@@ -543,12 +662,23 @@ int backtracking_line_search(ocp_nlp_config *config,
             return ACADOS_SUCCESS;
         }
 
-        if (alpha == 1.0 && trial_infeasibility < current_infeasibility)
-        {
-            printf("IPOPT would trigger SOC!\n");
-            accept_step = perform_funnel_soc();
-        }
 
+        if (alpha == 1.0 && trial_infeasibility > current_infeasibility)
+        {
+            printf("pred inf: %.4e\n", predicted_reduction_infeasibility);
+            printf("pred opt: %.4e\n", predicted_reduction_objective);
+            printf("IPOPT would trigger SOC!\n");
+            // copy qp_out to tmp_qp_out
+            ocp_qp_out_copy(nlp_mem->qp_out, nlp_work->tmp_qp_out); // do we need this?
+            accept_step = perform_funnel_soc(config, dims, nlp_in, nlp_out, nlp_mem, solver_mem, nlp_work, nlp_opts);
+            if (accept_step)
+            {
+                ocp_qp_out_copy(nlp_work->tmp_qp_out, nlp_mem->qp_out); // do we need this?
+                *step_size = alpha;
+                return ACADOS_SUCCESS;
+                printf("SOC succesful!\n");
+            }
+        }
 
         if (alpha < globalization_opts->alpha_min)
         {

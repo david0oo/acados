@@ -92,6 +92,7 @@ typedef struct
     double l1_infeasibility;
     double penalty_parameter;
     double alpha;
+    double infeasibility_min;
 
 } ocp_nlp_globalization_funnel_memory;
 //

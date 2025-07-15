@@ -227,6 +227,7 @@ void *ocp_nlp_globalization_funnel_memory_assign(void *config_, void *dims_, voi
 
 void initialize_funnel_width(ocp_nlp_globalization_funnel_memory *mem, ocp_nlp_globalization_funnel_opts *opts, double initial_infeasibility)
 {
+    mem->infeasibility_min = 1e-4*MAX(1.0, initial_infeasibility);
     mem->funnel_width = MAX(opts->initialization_upper_bound,
                             opts->initialization_increase_factor*initial_infeasibility);
 }
@@ -313,6 +314,96 @@ bool is_armijo_condition_satisfied(ocp_nlp_globalization_opts *globalization_opt
     {
         return false;
     }
+}
+
+static bool is_trial_iterate_acceptable_in_phase1(ocp_nlp_globalization_funnel_memory *mem,
+                                           ocp_nlp_opts *nlp_opts,
+                                            double pred_optimality,
+                                            double ared_optimality,
+                                            double alpha,
+                                            double current_infeasibility,
+                                            double trial_infeasibility,
+                                            double current_objective,
+                                            double trial_objective,
+                                            double current_merit,
+                                            double trial_merit,
+                                            double pred_merit,
+                                            double pred_infeasibility)
+{
+    ocp_nlp_globalization_funnel_opts *opts = nlp_opts->globalization;
+    ocp_nlp_globalization_opts *globalization_opts = opts->globalization_opts;
+    bool accept_step = false;
+
+    int update_version = 1;
+    printf("current infeasibility: %.4e\n", current_infeasibility);
+    printf("trial infeasibility: %.4e\n", trial_infeasibility);
+
+    if (is_iterate_inside_of_funnel(mem, opts, trial_infeasibility))
+    {
+        if (update_version == 1)
+        {
+            printf("IPOPT Update!\n");
+            if (trial_infeasibility <= (1.0-1e-5)*current_infeasibility || trial_objective <= current_objective -1e-5*current_infeasibility)
+            {
+                accept_step = true;
+                if (is_funnel_sufficient_decrease_satisfied(mem, opts, trial_infeasibility))
+                {
+                    decrease_funnel(mem, opts, trial_infeasibility, current_infeasibility);
+                    mem->funnel_penalty_mode = false;
+                }
+            }
+        }
+        else if (update_version == 2)
+        {
+            printf("In tolerance-tube check!\n");
+            if (is_armijo_condition_satisfied(globalization_opts, current_infeasibility-trial_infeasibility, pred_infeasibility, alpha))
+            {
+            print_debug_output("p-type step: accepted iterate\n", nlp_opts->print_level, 1);
+            accept_step = true;
+            mem->funnel_iter_type = 'p';
+                if (is_funnel_sufficient_decrease_satisfied(mem, opts, trial_infeasibility))
+                {
+                    decrease_funnel(mem, opts, trial_infeasibility, current_infeasibility);
+                    mem->funnel_penalty_mode = false;
+                }
+            }
+        }
+        else if (update_version == 3)
+        {
+            // merit function check
+            printf("In inverse penalty function!\n");
+            if (is_armijo_condition_satisfied(globalization_opts, current_merit-trial_merit, pred_merit, alpha))
+            {
+                print_debug_output("p-type step: accepted iterate\n", nlp_opts->print_level, 1);
+                accept_step = true;
+                mem->funnel_iter_type = 'p';
+
+                if (is_funnel_sufficient_decrease_satisfied(mem, opts, trial_infeasibility))
+                {
+                    decrease_funnel(mem, opts, trial_infeasibility, current_infeasibility);
+                    mem->funnel_penalty_mode = false;
+                }
+            }
+        }
+        else if (update_version == 4)
+        {
+            if (is_funnel_sufficient_decrease_satisfied(mem, opts, trial_infeasibility))
+            {
+                printf("Phase 1 h type step!\n");
+                accept_step = true;
+                mem->funnel_iter_type = 'h';
+                decrease_funnel(mem, opts, trial_infeasibility, current_infeasibility);
+                mem->funnel_penalty_mode = false;
+            }
+        }
+        else if (update_version == 5)
+        {
+            //tba -> Leineweber merit function?
+        }
+    }
+
+    return accept_step;
+
 }
 
 bool is_trial_iterate_acceptable_to_funnel(ocp_nlp_globalization_funnel_memory *mem,
@@ -645,13 +736,31 @@ int backtracking_line_search(ocp_nlp_config *config,
         printf("current inf: %.4e\n", current_infeasibility);
         printf("trial inf: %.4e\n", trial_infeasibility);
 
-        // Funnel globalization
-        accept_step = is_trial_iterate_acceptable_to_funnel(mem, nlp_opts,
-                                                            predicted_reduction_objective, actual_reduction_objective,
-                                                            alpha, current_infeasibility,
-                                                            trial_infeasibility, current_cost,
-                                                            trial_cost, current_merit, trial_merit,
-                                                            predicted_reduction_merit, predicted_reduction_infeasibility);
+        bool do_soc = false;
+        bool with_phase1 = true;
+
+        if (with_phase1 && (current_infeasibility > mem->infeasibility_min && predicted_reduction_objective > 0))
+        // initialization or v > v_min
+        {
+            // Funnel globalization
+            accept_step = is_trial_iterate_acceptable_in_phase1(mem, nlp_opts,
+                                                                predicted_reduction_objective, actual_reduction_objective,
+                                                                alpha, current_infeasibility,
+                                                                trial_infeasibility, current_cost,
+                                                                trial_cost, current_merit, trial_merit,
+                                                                predicted_reduction_merit, predicted_reduction_infeasibility);
+        }
+        else
+        {
+            // Funnel globalization
+            accept_step = is_trial_iterate_acceptable_to_funnel(mem, nlp_opts,
+                                                                predicted_reduction_objective, actual_reduction_objective,
+                                                                alpha, current_infeasibility,
+                                                                trial_infeasibility, current_cost,
+                                                                trial_cost, current_merit, trial_merit,
+                                                                predicted_reduction_merit, predicted_reduction_infeasibility);
+        }
+
 
         if (accept_step)
         {
@@ -663,7 +772,7 @@ int backtracking_line_search(ocp_nlp_config *config,
         }
 
 
-        if (alpha == 1.0 && trial_infeasibility > current_infeasibility)
+        if (do_soc && alpha == 1.0 && trial_infeasibility > current_infeasibility)
         {
             printf("pred inf: %.4e\n", predicted_reduction_infeasibility);
             printf("pred opt: %.4e\n", predicted_reduction_objective);

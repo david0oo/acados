@@ -1039,6 +1039,10 @@ class AcadosOcp:
             if opts.nlp_solver_type == "SQP_RTI":
                 raise NotImplementedError('qpscaling_scale_constraints and qpscaling_scale_objective not supported for SQP_RTI solver.')
 
+        if opts.nlp_qp_tol_strategy == "ADAPTIVE_QPSCALING":
+            if opts.qpscaling_scale_constraints == "NO_CONSTRAINT_SCALING" and opts.qpscaling_scale_objective == "NO_OBJECTIVE_SCALING":
+                raise NotImplementedError('ADAPTIVE_QPSCALING only makes sense if QP scaling is used.')
+
         # Set default parameters for globalization
         ddp_with_merit_or_funnel = opts.globalization == 'FUNNEL_L1PEN_LINESEARCH' or (opts.nlp_solver_type == "DDP" and opts.globalization == 'MERIT_BACKTRACKING')
         if opts.globalization_alpha_min is None:
@@ -1046,12 +1050,6 @@ class AcadosOcp:
                 opts.globalization_alpha_min = 1e-17
             else:
                 opts.globalization_alpha_min = 0.05
-
-        if opts.globalization_alpha_reduction is None:
-            if ddp_with_merit_or_funnel:
-                opts.globalization_alpha_reduction = 0.5
-            else:
-                opts.globalization_alpha_reduction = 0.7
 
         if opts.globalization_eps_sufficient_descent is None:
             if ddp_with_merit_or_funnel:
@@ -1078,6 +1076,11 @@ class AcadosOcp:
         # sanity check for Funnel globalization and SQP
         if opts.globalization == 'FUNNEL_L1PEN_LINESEARCH' and opts.nlp_solver_type not in ['SQP', 'SQP_WITH_FEASIBLE_QP']:
             raise NotImplementedError('FUNNEL_L1PEN_LINESEARCH only supports SQP.')
+
+        # RTI checks
+        if opts.nlp_solver_type == "SQP_RTI":
+            if opts.nlp_qp_tol_strategy != "FIXED_QP_TOL":
+                raise NotImplementedError('SQP_RTI only supports FIXED_QP_TOL nlp_qp_tol_strategy.')
 
         # termination
         if opts.nlp_solver_tol_min_step_norm is None:
@@ -1895,10 +1898,10 @@ class AcadosOcp:
             for i in range(casadi_length(constr_expr)):
                 self.formulate_constraint_as_L2_penalty(constr_expr[i], weight=1.0, upper_bound=upper_bound[i], lower_bound=lower_bound[i])
 
-        model.con_h_expr = None
-        model.con_phi_expr = None
-        model.con_r_expr = None
-        model.con_r_in_phi = None
+        model.con_h_expr = []
+        model.con_phi_expr = []
+        model.con_r_expr = []
+        model.con_r_in_phi = []
 
         # formulate **terminal** constraints as L2 penalties
         expr_bound_list_e = [
@@ -1915,10 +1918,10 @@ class AcadosOcp:
             for i in range(casadi_length(constr_expr)):
                 self.formulate_constraint_as_L2_penalty(constr_expr[i], weight=1.0, upper_bound=upper_bound[i], lower_bound=lower_bound[i], constraint_type="terminal")
 
-        model.con_h_expr_e = None
-        model.con_phi_expr_e = None
-        model.con_r_expr_e = None
-        model.con_r_in_phi_e = None
+        model.con_h_expr_e = []
+        model.con_phi_expr_e = []
+        model.con_r_expr_e = []
+        model.con_r_in_phi_e = []
 
         # Convert initial conditions to l2 penalty
         # Expressions for control constraints on u
@@ -1953,10 +1956,10 @@ class AcadosOcp:
             for i in range(casadi_length(constr_expr)):
                 self.formulate_constraint_as_L2_penalty(constr_expr[i], weight=1.0, upper_bound=upper_bound[i], lower_bound=lower_bound[i], constraint_type="initial")
 
-        model.con_h_expr_0 = None
-        model.con_phi_expr_0 = None
-        model.con_r_expr_0 = None
-        model.con_r_in_phi_0 = None
+        model.con_h_expr_0 = []
+        model.con_phi_expr_0 = []
+        model.con_r_expr_0 = []
+        model.con_r_in_phi_0 = []
 
         # delete constraint fromulation from constraints object
         self.constraints = new_constraints

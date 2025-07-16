@@ -662,8 +662,8 @@ int backtracking_line_search(ocp_nlp_config *config,
             return ACADOS_SUCCESS;
         }
 
-
-        if (alpha == 1.0 && trial_infeasibility > current_infeasibility)
+        bool use_soc = false;
+        if (use_soc && (alpha == 1.0 && trial_infeasibility > current_infeasibility))
         {
             printf("pred inf: %.4e\n", predicted_reduction_infeasibility);
             printf("pred opt: %.4e\n", predicted_reduction_objective);

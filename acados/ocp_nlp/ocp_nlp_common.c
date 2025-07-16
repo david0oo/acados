@@ -3105,7 +3105,7 @@ void ocp_nlp_approximate_qp_vectors_sqp(ocp_nlp_config *config,
 // zero order update QP: Update all constraint evaluations in QP
 void ocp_nlp_zero_order_qp_update(ocp_nlp_config *config,
     ocp_nlp_dims *dims, ocp_nlp_in *in, ocp_nlp_out *out, ocp_nlp_opts *opts,
-    ocp_nlp_memory *mem, ocp_nlp_workspace *work)
+    ocp_nlp_memory *mem, ocp_nlp_workspace *work, ocp_qp_in *qp_in, ocp_qp_out *qp_out)
 {
     int N = dims->N;
     // int *nv = dims->nv;
@@ -3123,7 +3123,7 @@ void ocp_nlp_zero_order_qp_update(ocp_nlp_config *config,
             in->constraints[i], opts->constraints[i], mem->constraints[i], work->constraints[i]);
         // copy ineq function value into QP
         struct blasfeo_dvec *ineq_fun = config->constraints[i]->memory_get_fun_ptr(mem->constraints[i]);
-        blasfeo_dveccp(2 * ni[i], ineq_fun, 0, mem->qp_in->d + i, 0);
+        blasfeo_dveccp(2 * ni[i], ineq_fun, 0, qp_in->d + i, 0);
         // copy into nlp_mem
         blasfeo_dveccp(2 * ni[i], ineq_fun, 0, mem->ineq_fun + i, 0);
     }
@@ -3138,7 +3138,7 @@ void ocp_nlp_zero_order_qp_update(ocp_nlp_config *config,
                                          opts->dynamics[i], mem->dynamics[i], work->dynamics[i]);
 
         struct blasfeo_dvec *dyn_fun = config->dynamics[i]->memory_get_fun_ptr(mem->dynamics[i]);
-        blasfeo_dveccp(nx[i + 1], dyn_fun, 0, mem->qp_in->b + i, 0);
+        blasfeo_dveccp(nx[i + 1], dyn_fun, 0, qp_in->b + i, 0);
         blasfeo_dveccp(nx[i + 1], dyn_fun, 0, mem->dyn_fun + i, 0);
     }
 
@@ -3147,8 +3147,8 @@ void ocp_nlp_zero_order_qp_update(ocp_nlp_config *config,
     for (int i = 0; i <= N; i++)
     {
         // NOTE: only lower triagonal of RSQ is stored
-        blasfeo_dsymv_l_mn(nx[i]+nu[i], nx[i]+nu[i], 1.0, mem->qp_in->RSQrq+i, 0, 0,
-                        mem->qp_out->ux+i, 0, 1.0, mem->qp_in->rqz+i, 0, mem->qp_in->rqz+i, 0);
+        blasfeo_dsymv_l_mn(nx[i]+nu[i], nx[i]+nu[i], 1.0, qp_in->RSQrq+i, 0, 0,
+                        qp_out->ux+i, 0, 1.0, qp_in->rqz+i, 0, qp_in->rqz+i, 0);
         // TODO: fix for ns > 0.
     }
 }

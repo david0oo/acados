@@ -883,7 +883,7 @@ static void ocp_nlp_sqp_rti_preparation_advanced_step(ocp_nlp_config *config, oc
         {
             acados_tic(&timer1);
             // zero order QP update
-            ocp_nlp_zero_order_qp_update(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
+            ocp_nlp_zero_order_qp_update(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work, nlp_mem->qp_in, nlp_mem->qp_out);
             timings->time_lin += acados_toc(&timer1);
 
             if (opts->rti_log_residuals && !opts->rti_log_only_available_residuals)

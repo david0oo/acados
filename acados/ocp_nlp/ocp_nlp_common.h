@@ -580,7 +580,7 @@ void ocp_nlp_approximate_qp_vectors_sqp(ocp_nlp_config *config, ocp_nlp_dims *di
 //
 void ocp_nlp_zero_order_qp_update(ocp_nlp_config *config,
     ocp_nlp_dims *dims, ocp_nlp_in *in, ocp_nlp_out *out, ocp_nlp_opts *opts,
-    ocp_nlp_memory *mem, ocp_nlp_workspace *work);
+    ocp_nlp_memory *mem, ocp_nlp_workspace *work, ocp_qp_in *qp_in, ocp_qp_out *qp_out);
 //
 void ocp_nlp_level_c_update(ocp_nlp_config *config,
     ocp_nlp_dims *dims, ocp_nlp_in *in, ocp_nlp_out *out, ocp_nlp_opts *opts,

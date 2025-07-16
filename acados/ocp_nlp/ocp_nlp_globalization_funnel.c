@@ -439,7 +439,7 @@ static bool perform_funnel_soc(ocp_nlp_config *config,
     int p_max = 4;
     // for higher values, we need to check implementation
     ocp_qp_out *soc_qp_out = nlp_work->tmp_qp_out;
-    ocp_qp_in *qp_in = nlp_mem->qp_in;
+    ocp_qp_in *qp_in = nlp_mem->scaled_qp_in;
     double infeasibility_soc_old = current_infeasibility;
     // enter SOC loop
     // trial iterate is here: nlp_work->tmp_nlp_out
@@ -546,6 +546,72 @@ static bool perform_funnel_soc(ocp_nlp_config *config,
         }
 
     }
+//     // perform zero-order iterations
+//     for (int p=0; p < p_max; p++)
+//     {
+//         acados_tic(&timer1);
+//         // zero order QP update
+//         ocp_nlp_zero_order_qp_update(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
+//         timings->time_lin += acados_toc(&timer1);
+
+//         if (opts->rti_log_residuals && !opts->rti_log_only_available_residuals)
+//         {
+//             // evaluate additional functions and compute residuals
+//             prepare_full_residual_computation(config, dims, nlp_in, nlp_out, nlp_opts, nlp_mem, nlp_work);
+//             ocp_nlp_res_compute(dims, nlp_opts, nlp_in, nlp_out, nlp_mem->nlp_res, nlp_mem, nlp_work);
+//             rti_store_residuals_in_stats(opts, mem);
+//         }
+
+//         // rhs regularization
+//         acados_tic(&timer1);
+//         config->regularize->regularize_rhs(config->regularize,
+//             dims->regularize, nlp_opts->regularize, nlp_mem->regularize_mem);
+//         timings->time_reg += acados_toc(&timer1);
+
+//         // QP solve
+//         qp_status = ocp_nlp_solve_qp_and_correct_dual(config, dims, nlp_opts, nlp_mem, nlp_work, true, NULL, NULL, NULL, NULL, NULL);
+
+//         ocp_qp_out_get(nlp_mem->qp_out, "qp_info", &qp_info_);
+//         qp_iter = qp_info_->num_iter;
+
+//         // save statistics
+//         mem->stat[mem->stat_n * nlp_mem->iter+0] = qp_status;
+//         mem->stat[mem->stat_n * nlp_mem->iter+1] = qp_iter;
+
+//         // compute correct dual solution in case of Hessian regularization
+//         acados_tic(&timer1);
+//         config->regularize->correct_dual_sol(config->regularize,
+//             dims->regularize, nlp_opts->regularize, nlp_mem->regularize_mem);
+//         timings->time_reg += acados_toc(&timer1);
+//         if ((qp_status!=ACADOS_SUCCESS) & (qp_status!=ACADOS_MAXITER))
+//         {
+// #ifndef ACADOS_SILENT
+//             printf("\nSQP_RTI: QP solver returned error status %d QP iteration %d.\n",
+//                 qp_status, qp_iter);
+// #endif
+//             nlp_mem->status = ACADOS_QP_FAILURE;
+//             return;
+//         }
+
+//         if (nlp_opts->print_level > 0) {
+//             printf("\n------- qp_in B-iter %d --------\n", nlp_mem->iter);
+//             print_ocp_qp_in(nlp_mem->qp_in);
+//             printf("\n------- qp_out B-iter %d --------\n", nlp_mem->iter);
+//             print_ocp_qp_out(nlp_mem->qp_out);
+//         }
+
+//         // update variables
+//         double step_size;
+//         globalization_status = config->globalization->find_acceptable_iterate(config, dims, nlp_in, nlp_out, nlp_mem, mem, nlp_work, nlp_opts, &step_size);
+//         if (globalization_status != ACADOS_SUCCESS)
+//         {
+//             if (nlp_opts->print_level > 1)
+//             {
+//                 printf("\nFailure in globalization, got status %d!\n", globalization_status);
+//             }
+//             return;
+//         }
+//     }
     return false;
 }
 
@@ -662,14 +728,14 @@ int backtracking_line_search(ocp_nlp_config *config,
             return ACADOS_SUCCESS;
         }
 
-        bool use_soc = false;
+        bool use_soc = true;
         if (use_soc && (alpha == 1.0 && trial_infeasibility > current_infeasibility))
         {
             printf("pred inf: %.4e\n", predicted_reduction_infeasibility);
             printf("pred opt: %.4e\n", predicted_reduction_objective);
             printf("IPOPT would trigger SOC!\n");
             // copy qp_out to tmp_qp_out
-            ocp_qp_out_copy(nlp_mem->qp_out, nlp_work->tmp_qp_out); // do we need this?
+            ocp_qp_out_copy(nlp_mem->scaled_qp_out, nlp_work->tmp_qp_out); // do we need this?
             accept_step = perform_funnel_soc(config, dims, nlp_in, nlp_out, nlp_mem, solver_mem, nlp_work, nlp_opts);
             if (accept_step)
             {

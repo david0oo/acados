@@ -152,7 +152,6 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
     char module[MAX_STR_LEN];
     char *ptr_module = NULL;
     int module_length = 0;
-
     // extract module name
     char *char_ = strchr(field, '_');
     if (char_!=NULL)
@@ -163,7 +162,6 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
         module[module_length] = '\0'; // add end of string
         ptr_module = module;
     }
-
     // pass options to QP module
     if ( ptr_module!=NULL && (!strcmp(ptr_module, "qp")) )
     {
@@ -178,7 +176,7 @@ void ocp_nlp_sqp_wfqp_opts_set(void *config_, void *opts_, const char *field, vo
         }
         else if (!strcmp(field, "byrd_omojokon_slack_relaxation_factor"))
         {
-            bool* byrd_omojokon_slack_relaxation_factor = (bool *) value;
+            double* byrd_omojokon_slack_relaxation_factor = (double *) value;
             opts->byrd_omojokon_slack_relaxation_factor = *byrd_omojokon_slack_relaxation_factor;
         }
         else if (!strcmp(field, "search_direction_mode"))

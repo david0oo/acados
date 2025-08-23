@@ -3327,6 +3327,26 @@ void ocp_nlp_initialize_qp_from_nlp(ocp_nlp_config *config, ocp_nlp_dims *dims, 
     ocp_qp_compute_t(qp_in, qp_out);
 }
 
+void ocp_nlp_increment_evaluations_counter(ocp_nlp_memory *mem, bool is_ddp)
+{
+    mem->n_eval_obj += 1;
+    if (!is_ddp)
+        mem->n_eval_con += 1;
+    mem->n_eval_dyn += 1;
+    mem->n_eval_grad_obj += 1;
+    mem->n_eval_jac_con += 1;
+    mem->n_eval_hess += 1;
+}
+
+void ocp_nlp_reset_evaluations_counter(ocp_nlp_memory *mem)
+{
+    mem->n_eval_obj = 0;
+    mem->n_eval_con = 0;
+    mem->n_eval_dyn = 0;
+    mem->n_eval_grad_obj = 0;
+    mem->n_eval_jac_con = 0;
+    mem->n_eval_hess = 0;
+}
 
 double ocp_nlp_compute_anderson_gamma(ocp_nlp_workspace *work, ocp_qp_out *new_qp_step, ocp_qp_out *new_minus_old_qp_step)
 {
@@ -4676,6 +4696,36 @@ void ocp_nlp_memory_get(ocp_nlp_config *config, ocp_nlp_memory *nlp_mem, const c
     {
         int *value = return_value_;
         *value = nlp_mem->n_solved_qps;
+    }
+    else if (!strcmp("n_eval_obj", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_eval_obj;
+    }
+    else if (!strcmp("n_eval_con", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_eval_con;
+    }
+    else if (!strcmp("n_eval_dyn", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_eval_dyn;
+    }
+    else if (!strcmp("n_eval_grad_obj", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_eval_grad_obj;
+    }
+    else if (!strcmp("n_eval_jac_con", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_eval_jac_con;
+    }
+    else if (!strcmp("n_eval_hess", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_eval_hess;
     }
     else if (!strcmp("status", field))
     {

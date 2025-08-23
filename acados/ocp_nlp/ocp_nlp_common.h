@@ -491,6 +491,12 @@ typedef struct ocp_nlp_memory
     int status;
     int iter;
     int n_solved_qps;
+    int n_eval_obj;
+    int n_eval_con;
+    int n_eval_dyn;
+    int n_eval_grad_obj;
+    int n_eval_jac_con;
+    int n_eval_hess;
 
     double adaptive_levenberg_marquardt_mu;
     double adaptive_levenberg_marquardt_mu_bar;
@@ -602,7 +608,10 @@ int ocp_nlp_precompute_common(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nl
 //
 void ocp_nlp_initialize_qp_from_nlp(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_qp_in *qp_in,
             ocp_nlp_out *out, ocp_qp_out *qp_out);
-
+//
+void ocp_nlp_increment_evaluations_counter(ocp_nlp_memory *mem, bool is_ddp);
+//
+void ocp_nlp_reset_evaluations_counter(ocp_nlp_memory *mem);
 //
 void ocp_nlp_res_compute(ocp_nlp_dims *dims, ocp_nlp_opts *opts, ocp_nlp_in *in, ocp_nlp_out *out,
                          ocp_nlp_res *res, ocp_nlp_memory *mem, ocp_nlp_workspace *work);

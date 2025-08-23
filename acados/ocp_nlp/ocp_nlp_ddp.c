@@ -593,6 +593,7 @@ int ocp_nlp_ddp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
      ************************************************/
     int ddp_iter = 0;
     nlp_mem->n_solved_qps = 0;
+    ocp_nlp_reset_evaluations_counter(nlp_mem);
     double reg_param_memory = 0.0;
     bool infeasible_initial_guess = true;
     // bool evaluate_cost = true;
@@ -632,6 +633,8 @@ int ocp_nlp_ddp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             // compute nlp residuals
             ocp_nlp_res_compute(dims, nlp_opts, nlp_in, nlp_out, nlp_res, nlp_mem, nlp_work);
             ocp_nlp_res_get_inf_norm(nlp_res, &nlp_out->inf_norm_res);
+
+            ocp_nlp_increment_evaluations_counter(nlp_mem, true);
         }
 
         // save statistics

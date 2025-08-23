@@ -1571,6 +1571,7 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
      ************************************************/
     nlp_mem->iter = 0;
     nlp_mem->n_solved_qps = 0;
+    ocp_nlp_reset_evaluations_counter(nlp_mem);
     double prev_levenberg_marquardt = 0.0;
     int search_direction_status = 0;
 
@@ -1614,6 +1615,15 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             // compute nlp residuals
             ocp_nlp_res_compute(dims, nlp_opts, nlp_in, nlp_out, nlp_res, nlp_mem, nlp_work);
             ocp_nlp_res_get_inf_norm(nlp_res, &nlp_out->inf_norm_res);
+
+            ocp_nlp_increment_evaluations_counter(nlp_mem, false);
+            //TODO: this is a hack, to avoid re-calculate the number of evals which
+            // is actually needed!!
+            if (nlp_mem->iter > 0)
+            {
+                nlp_mem->n_eval_obj -= 1;
+                nlp_mem->n_eval_con -= 1;
+            }
         }
 
         // Initialize the memory for different globalization strategies
@@ -1648,6 +1658,8 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             omp_set_num_threads(num_threads_bkp);
 #endif
             nlp_timings->time_tot = acados_toc(&timer_tot);
+            printf("N_eval f: %d\n", nlp_mem->n_eval_obj);
+            printf("N_eval g: %d\n", nlp_mem->n_eval_con);
             return mem->nlp_mem->status;
         }
 

@@ -445,6 +445,8 @@ int backtracking_line_search(ocp_nlp_config *config,
 
     int i;
 
+    int n_eval_obj_con_dyn = 0;
+
     while (true)
     {
         // Calculate trial iterate: trial_iterate = current_iterate + alpha * direction
@@ -498,6 +500,8 @@ int backtracking_line_search(ocp_nlp_config *config,
         }
         trial_infeasibility = ocp_nlp_get_l1_infeasibility(config, dims, nlp_mem);
 
+
+        n_eval_obj_con_dyn += 1;
         ///////////////////////////////////////////////////////////////////////
         // Evaluate merit function at trial point
         double trial_merit = mem->penalty_parameter*trial_cost + trial_infeasibility;
@@ -518,6 +522,9 @@ int backtracking_line_search(ocp_nlp_config *config,
             *step_size = alpha;
             nlp_mem->cost_value = trial_cost;
             mem->l1_infeasibility = trial_infeasibility;
+            nlp_mem->n_eval_obj += n_eval_obj_con_dyn;
+            nlp_mem->n_eval_dyn += n_eval_obj_con_dyn;
+            nlp_mem->n_eval_con += n_eval_obj_con_dyn;
             return ACADOS_SUCCESS;
         }
 

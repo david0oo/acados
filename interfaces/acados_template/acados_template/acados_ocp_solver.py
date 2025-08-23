@@ -1518,6 +1518,12 @@ class AcadosOcpSolver:
             - sqp_iter: number of SQP iterations
             - nlp_iter: number of NLP solver iterations (DDP or SQP)
             - n_solved_qps: number of QPs solved during problem solve (DDP or SQP or SQP_WITH_FEASIBLE_QP)
+            - n_eval_obj: number of objective evaluations
+            - n_eval_con: number of constraints evaluations
+            - n_eval_dyn: number of dynamics evaluations
+            - n_eval_grad_obj: number of gradient of objective evaluations
+            - n_eval_jac_con: number of gradient of constraint Jacobian evaluations
+            - n_eval_hess: number of Hessian evaluations
             - qp_stat: vector of QP solver status for last NLP solver call
             - qp_iter: vector of QP iterations for last NLP solver call
             - qpscaling_status: status of last call to qpscaling module
@@ -1549,7 +1555,19 @@ class AcadosOcpSolver:
                   'time_feedback',
                   'qp_tau_iter',
         ]
-        int_fields = ['ddp_iter', 'sqp_iter', 'nlp_iter', 'stat_m', 'stat_n', 'qpscaling_status', 'n_solved_qps']
+        int_fields = ['ddp_iter',
+                      'sqp_iter',
+                      'nlp_iter',
+                      'stat_m',
+                      'stat_n',
+                      'qpscaling_status',
+                      'n_solved_qps',
+                      'n_eval_obj',
+                      'n_eval_con',
+                      'n_eval_dyn',
+                      'n_eval_grad_obj',
+                      'n_eval_jac_con',
+                      'n_eval_hess']
         fields = double_fields + int_fields + [
                   'qp_stat',
                   'qp_iter',

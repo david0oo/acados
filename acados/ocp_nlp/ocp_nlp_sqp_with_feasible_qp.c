@@ -1570,6 +1570,7 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
      * main sqp loop
      ************************************************/
     nlp_mem->iter = 0;
+    nlp_mem->n_solved_qps = 0;
     double prev_levenberg_marquardt = 0.0;
     int search_direction_status = 0;
 
@@ -1668,6 +1669,7 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
 
         /* Search Direction Computation */
         search_direction_status = calculate_search_direction(dims, config, opts, nlp_opts, nlp_in, nlp_out, mem, work, timer_tot);
+        nlp_mem->n_solved_qps += mem->qps_solved_in_iter;
         if (search_direction_status != ACADOS_SUCCESS)
         {
 #if defined(ACADOS_WITH_OPENMP)
@@ -1719,10 +1721,8 @@ int ocp_nlp_sqp_wfqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
 #endif
             return nlp_mem->status;
         }
-
         mem->stat[mem->stat_n*(nlp_mem->iter+1)+10] = mem->alpha;
         nlp_timings->time_glob += acados_toc(&timer1);
-
     }  // end SQP loop
 
     if (nlp_opts->print_level > 0)

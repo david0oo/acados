@@ -524,6 +524,7 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
      * main sqp loop
      ************************************************/
     nlp_mem->iter = 0;
+    nlp_mem->n_solved_qps = 0;
     double prev_levenberg_marquardt = 0.0;
     int globalization_status;
 
@@ -709,6 +710,7 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
                 ocp_qp_res_compute_nrm_inf(nlp_work->qp_res, mem->stat+(mem->stat_n*(nlp_mem->iter+1)+7));
         }
 
+        nlp_mem->n_solved_qps += 1;
         // exit conditions on QP status
         if ((qp_status!=ACADOS_SUCCESS) & (qp_status!=ACADOS_MAXITER))
         {
@@ -750,7 +752,6 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             nlp_mem->predicted_infeasibility_reduction = ocp_nlp_get_l1_infeasibility(config, dims, nlp_mem);
             nlp_mem->predicted_optimality_reduction = -ocp_nlp_compute_gradient_directional_derivative(dims, qp_in, qp_out);
         }
-
         // Compute the step norm
         if (nlp_opts->tol_min_step_norm > 0.0 || nlp_opts->log_primal_step_norm || nlp_opts->print_level > 0)
         {

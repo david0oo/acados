@@ -1517,6 +1517,7 @@ class AcadosOcpSolver:
             - time_feedback: CPU time for last feedback phase, relevant for (AS-)RTI, otherwise returns total compuation time.
             - sqp_iter: number of SQP iterations
             - nlp_iter: number of NLP solver iterations (DDP or SQP)
+            - n_solved_qps: number of QPs solved during problem solve (DDP or SQP or SQP_WITH_FEASIBLE_QP)
             - qp_stat: vector of QP solver status for last NLP solver call
             - qp_iter: vector of QP iterations for last NLP solver call
             - qpscaling_status: status of last call to qpscaling module
@@ -1548,7 +1549,7 @@ class AcadosOcpSolver:
                   'time_feedback',
                   'qp_tau_iter',
         ]
-        int_fields = ['ddp_iter', 'sqp_iter', 'nlp_iter', 'stat_m', 'stat_n', 'qpscaling_status']
+        int_fields = ['ddp_iter', 'sqp_iter', 'nlp_iter', 'stat_m', 'stat_n', 'qpscaling_status', 'n_solved_qps']
         fields = double_fields + int_fields + [
                   'qp_stat',
                   'qp_iter',

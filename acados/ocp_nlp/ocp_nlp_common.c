@@ -4672,6 +4672,11 @@ void ocp_nlp_memory_get(ocp_nlp_config *config, ocp_nlp_memory *nlp_mem, const c
         int *value = return_value_;
         *value = nlp_mem->iter;
     }
+    else if (!strcmp("n_solved_qps", field))
+    {
+        int *value = return_value_;
+        *value = nlp_mem->n_solved_qps;
+    }
     else if (!strcmp("status", field))
     {
         int *value = return_value_;

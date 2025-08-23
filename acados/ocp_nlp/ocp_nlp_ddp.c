@@ -592,6 +592,7 @@ int ocp_nlp_ddp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
      * main ddp loop
      ************************************************/
     int ddp_iter = 0;
+    nlp_mem->n_solved_qps = 0;
     double reg_param_memory = 0.0;
     bool infeasible_initial_guess = true;
     // bool evaluate_cost = true;
@@ -737,7 +738,7 @@ int ocp_nlp_ddp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             if (ddp_iter+1 < mem->stat_m)
                 ocp_qp_res_compute_nrm_inf(work->qp_res, mem->stat+(mem->stat_n*(ddp_iter+1)+7));
         }
-
+        nlp_mem->n_solved_qps += 1;
         // exit conditions on QP status
         if ((qp_status!=ACADOS_SUCCESS) & (qp_status!=ACADOS_MAXITER))
         {

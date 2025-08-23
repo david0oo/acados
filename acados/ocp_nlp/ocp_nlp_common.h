@@ -490,6 +490,7 @@ typedef struct ocp_nlp_memory
 
     int status;
     int iter;
+    int n_solved_qps;
 
     double adaptive_levenberg_marquardt_mu;
     double adaptive_levenberg_marquardt_mu_bar;

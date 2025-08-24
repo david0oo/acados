@@ -1486,7 +1486,6 @@ static int calculate_search_direction(ocp_nlp_dims *dims,
         if (config->globalization->needs_objective_value() == 1)
         {
             mem->pred_l1_inf_QP = calculate_pred_l1_inf(opts, mem, l1_inf_QP_feasibility);
-            printf("pred_l1_inf: %.4e\n", mem->pred_l1_inf_QP);
         }
 
         if (l1_inf_QP_feasibility/(MAX(1.0, (double) mem->absolute_nns)) < nlp_opts->tol_ineq)

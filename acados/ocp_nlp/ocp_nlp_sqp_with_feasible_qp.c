@@ -557,11 +557,11 @@ static bool check_termination(int n_iter, ocp_nlp_dims *dims, ocp_nlp_res *nlp_r
         {
             if (nlp_res->inf_norm_res_eq < nlp_opts->tol_eq && nlp_res->inf_norm_res_ineq < nlp_opts->tol_ineq)
             {
-                printf("Stopped: Converged to feasible point. Step size is < tol_eq.\n");
+                printf("Stopped: Converged to feasible point. Step size is < tol_min_step_norm.\n");
             }
             else
             {
-                printf("Stopped: Converged to infeasible point. Step size is < tol_eq.\n");
+                printf("Stopped: Converged to infeasible point. Step size is < tol_min_step_norm.\n");
             }
         }
         mem->nlp_mem->status = ACADOS_MINSTEP;
@@ -687,6 +687,7 @@ static double calculate_qp_l1_infeasibility_from_slacks(ocp_nlp_dims *dims, ocp_
     double l1_inf = 0.0;
     int i, j;
     double tmp1, tmp2;
+
 
     for (i = 0; i <= N; i++)
     {
@@ -1485,6 +1486,7 @@ static int calculate_search_direction(ocp_nlp_dims *dims,
         if (config->globalization->needs_objective_value() == 1)
         {
             mem->pred_l1_inf_QP = calculate_pred_l1_inf(opts, mem, l1_inf_QP_feasibility);
+            printf("pred_l1_inf: %.4e\n", mem->pred_l1_inf_QP);
         }
 
         if (l1_inf_QP_feasibility/(MAX(1.0, (double) mem->absolute_nns)) < nlp_opts->tol_ineq)

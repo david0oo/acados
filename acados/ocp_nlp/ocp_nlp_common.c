@@ -1275,7 +1275,7 @@ void ocp_nlp_opts_initialize_default(void *config_, void *dims_, void *opts_)
     opts->tol_ineq = 1e-8;
     opts->tol_comp = 1e-8;
     opts->tol_unbounded = -1e10;
-    opts->tol_min_step_norm = 1e-12;
+    opts->tol_min_step_norm = 1e-10;
 
     // overwrite default submodules opts
     // qp tolerance

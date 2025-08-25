@@ -78,6 +78,7 @@ typedef struct
 {
     double step_norm;
     double alpha;
+    int n_eval_obj_con_dyn;
 } ocp_nlp_globalization_merit_backtracking_memory;
 
 //

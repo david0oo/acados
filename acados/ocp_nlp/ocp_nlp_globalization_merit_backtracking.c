@@ -608,6 +608,7 @@ double ocp_nlp_evaluate_merit_fun(ocp_nlp_config *config, ocp_nlp_dims *dims,
 {
     /* computes merit function value at iterate: tmp_nlp_out, with weights: work->weight_merit_fun */
     //int j;
+    ocp_nlp_globalization_merit_backtracking_memory *merit_mem = mem->globalization;
 
     int N = dims->N;
     int *nx = dims->nx;
@@ -648,6 +649,7 @@ double ocp_nlp_evaluate_merit_fun(ocp_nlp_config *config, ocp_nlp_dims *dims,
     }
     // reset evaluation point to SQP iterate
     ocp_nlp_set_primal_variable_pointers_in_submodules(config, dims, in, out, mem);
+    merit_mem->n_eval_obj_con_dyn += 1;
 
     double *tmp_fun;
     double tmp;
@@ -868,6 +870,7 @@ int ocp_nlp_globalization_merit_backtracking_find_acceptable_iterate(void *nlp_c
     ocp_nlp_globalization_opts *globalization_opts = merit_opts->globalization_opts;
 
     bool do_line_search = true;
+    mem->n_eval_obj_con_dyn = 0;
 
     if (merit_opts->globalization_opts->use_SOC)
     {
@@ -888,6 +891,10 @@ int ocp_nlp_globalization_merit_backtracking_find_acceptable_iterate(void *nlp_c
             return nlp_mem->status;
         }
     }
+
+    nlp_mem->n_eval_obj += mem->n_eval_obj_con_dyn;
+    nlp_mem->n_eval_dyn += mem->n_eval_obj_con_dyn;
+    nlp_mem->n_eval_con += mem->n_eval_obj_con_dyn;
 
     // update variables
     nlp_config->step_update(nlp_config, nlp_dims, nlp_in, nlp_out, nlp_mem->qp_out, nlp_opts, nlp_mem, nlp_work, nlp_out, solver_mem, mem->alpha, globalization_opts->full_step_dual);
